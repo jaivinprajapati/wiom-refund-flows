@@ -574,15 +574,16 @@
           <div class="option-block">
             <div class="option-label">Option A</div>
             <div class="option-title">Refund to original payment source</div>
-            <div class="option-desc">Read the source details to the customer for verbal confirmation before proceeding.</div>
+            <div class="option-desc">Refund will be sent to the original payment instrument used at the time of booking. Source details are not visible at our end — if the customer asks, inform them the refund will reach the same account they paid from.</div>
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
-              <span class="source-badge"><span class="material-icons">credit_card</span> HDFC card ••••4242</span>
-              <span style="font-size:12px; color:#757575;">ETA: 5–7 business days</span>
+              <span class="source-badge"><span class="material-icons">account_balance</span> Original payment source on file</span>
+              <span style="font-size:12px; color:#757575;">ETA: 3–5 business days</span>
             </div>
             <button class="btn btn-outlined" id="source-action-btn" disabled onclick="showConfirmSource()">Refund to Source</button>
 
             <div class="confirm-box" id="confirm-source-box" style="display:none">
-              <div class="confirm-box-title">Confirm: refund to HDFC card ••••4242?</div>
+              <div class="confirm-box-title">Confirm: refund to customer's original payment source?</div>
+              <div style="font-size:12px; color:#757575; margin-top:6px; margin-bottom:4px;">Source details are not visible at our end. Refund will reach the same account the customer paid from. ETA: 3–5 business days.</div>
               <div class="btn-row" style="margin-top:12px">
                 <button class="btn btn-primary" onclick="setState('success')">Confirm & Initiate</button>
                 <button class="btn btn-ghost" onclick="hideConfirmSource()">Cancel</button>
