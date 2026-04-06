@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Wiom Refund Flows</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #212121;
+        }
+        .tab-bar {
+            background: #1565c0;
+            display: flex;
+            gap: 0;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .tab-btn {
+            padding: 14px 24px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+        .tab-btn.active { color: #fff; border-bottom: 3px solid #fff; }
+        .tab-content { display: none; padding: 24px 40px; }
+        .tab-content.active { display: block; }
+        h1 { font-size: 24px; border-bottom: 2px solid #1565c0; padding-bottom: 8px; margin-top: 0; }
+        h2 { font-size: 18px; margin-top: 40px; color: #1565c0; }
+        h3 { font-size: 15px; margin-top: 24px; color: #37474f; }
+        .diagram-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0 32px 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        .context {
+            background: #e3f2fd;
+            border-left: 4px solid #1565c0;
+            padding: 12px 16px;
+            margin: 12px 0 24px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .warn {
+            background: #fff8e1;
+            border-left: 4px solid #f9a825;
+            padding: 12px 16px;
+            margin: 12px 0 24px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .legend { display: flex; gap: 24px; flex-wrap: wrap; margin: 12px 0 24px 0; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .legend-color { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #999; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        th { background: #1565c0; color: #fff; padding: 10px 12px; text-align: left; }
+        td { padding: 9px 12px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+        tr:nth-child(even) td { background: #fafafa; }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-high { background: #ffcdd2; color: #b71c1c; }
+        .badge-med  { background: #fff9c4; color: #6d4c00; }
+        .badge-low  { background: #e8f5e9; color: #2e7d32; }
+        .open-item { background: #fff3e0; border-left: 4px solid #ef6c00; padding: 10px 14px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('cs')">CS Diagnostic Flow</button>
+    <button class="tab-btn" onclick="switchTab('ops')">Manual Refund — Wiom Hub</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 1: CS DIAGNOSTIC FLOW (original — unchanged)          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tab-cs" class="tab-content active">
+
+<h1>Customer Asks for Refund — How Wiom Decides</h1>
+<p>Updated: 2026-04-02</p>
+
+<div class="context">
+    <strong>Context:</strong> Customer has churned and is calling Wiom asking for their security deposit refund. Wiom's decision to process the refund is based on confirmed signals about where the device is. The CS agent's job is to identify the strongest available signal — and from that, make a call: refund, wait, or dispute.<br><br>
+    <strong>Four actors must do their job for a refund to complete:</strong><br>
+    1. <strong>Customer's job</strong> — Hand over the router + Submit UPI<br>
+    2. <strong>Partner's job</strong> — Collect the router + Close the PUT successfully<br>
+    3. <strong>3PL's job</strong> — Collect router from customer (when partner fails) + Send back to Wiom warehouse<br>
+    4. <strong>Wiom's job</strong> — Evaluate device location signal → make refund decision → process via Wiom Hub
+</div>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#e3f2fd"></div> CS Action</div>
+    <div class="legend-item"><div class="legend-color" style="background:#c8e6c9"></div> Resolved</div>
+    <div class="legend-item"><div class="legend-color" style="background:#ffcdd2"></div> Escalate</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fff9c4"></div> Waiting / Inform</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f3e5f5"></div> Decision</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fff3e0"></div> Global Scanner Fallback</div>
+</div>
+
+<!-- ===================== DIAGRAM 1 ===================== -->
+<h2>1. Device Signal Evaluation — Refund Decision Tree</h2>
+<p>CS agent opens customer record in Wiom Hub → system surfaces all signals (PUT status, UPI, payout, device state, refund history). Agent evaluates and makes the refund decision.</p>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef start fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef action fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+    classDef resolve fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef escalate fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef wait fill:#fff9c4,stroke:#f9a825,color:#6d4c00
+    classDef decision fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef gist fill:#fff3e0,stroke:#e65100,color:#4e2a00
+
+    CALL["📞 Customer calls for refund"]:::start
+    CALL --> SHEET["CS opens customer record in Wiom Hub\nSignals surfaced: PUT status, device state,\nUPI on file, payout history, refund status"]:::action
+    SHEET --> DIAG["Evaluate device location signal:\nCall customer and partner — where is the device?"]:::action
+
+    DIAG -->|"1. Customer says\nthey still have it"| CX_HAS{"PUT state?"}:::decision
+    DIAG -->|"2. Partner says\nthey have it"| PTR_HAS{"PUT state?"}:::decision
+    DIAG -->|"3. Customer says\n3PL picked it up"| TPL["3PL has the device\n(PUT is expired)"]:::action
+    DIAG -->|"4. Both deny /\nContradict"| DISPUTE["🚫 DISPUTE\nDo NOT refund\nEscalate to product team\n(see Dispute Handling below)"]:::escalate
+    DIAG -->|"5. Device already\nat Wiom warehouse"| WH_HAS{"Payout state?"}:::decision
+
+    %% ============================================
+    %% 1. CUSTOMER HAS DEVICE
+    %% ============================================
+    CX_HAS -->|"PUT open"| CX_OPEN["Tell partner to collect\ndevice from customer\n+ close PUT before expiry"]:::action
+    CX_OPEN --> CX_OPEN_UPI{"UPI on file?"}:::decision
+    CX_OPEN_UPI -->|"Yes"| CX_OPEN_DONE["✅ REFUND DECISION: YES\nAuto-processes once PUT closed\nWiom Hub: confirm payout status"]:::resolve
+    CX_OPEN_UPI -->|"No"| CX_OPEN_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    CX_HAS -->|"PUT expired"| CX_EXP["3PL collects device\ndirectly from customer\n→ sends to Wiom warehouse"]:::action
+    CX_EXP --> CX_EXP_UPI{"UPI on file?"}:::decision
+    CX_EXP_UPI -->|"Yes"| CX_EXP_DONE["✅ REFUND DECISION: YES\nAuto-processes after warehouse receipt\nTell customer to wait"]:::resolve
+    CX_EXP_UPI -->|"No"| CX_EXP_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    CX_HAS -->|"PUT resolved"| CX_RESOLVED["⚠️ Flag to product team:\nHow did partner close PUT\nwithout physically having device?\n─────────────────\nRaise device pickup request\nto 3PL team (Anurag)\nThey will arrange pickup from customer\n─────────────────\nAsk customer to wait:\nRefund processes once\n3PL signals device pickup"]:::escalate
+    CX_RESOLVED --> CX_RES_UPI{"UPI on file?"}:::decision
+    CX_RES_UPI -->|"Yes"| CX_RES_YES["REFUND DECISION: YES\nAuto-processes once 3PL\nsignals device pickup"]:::resolve
+    CX_RES_UPI -->|"No"| CX_RES_NO["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub once\n3PL signals pickup"]:::wait
+
+    CX_HAS -->|"PUT not yet\ncreated"| CX_NOPUT["Ask customer to open Wiom app\nand start Netbox Return flow\nPUT will be created automatically\nFollow up once PUT exists"]:::action
+
+    %% ============================================
+    %% 2. PARTNER HAS DEVICE
+    %% ============================================
+    PTR_HAS -->|"PUT open,\nno closure attempt"| PTR_OPEN["Tell partner to close PUT\nvia app (photos + QR scan)"]:::action
+    PTR_OPEN --> PTR_OPEN_UPI{"UPI on file?"}:::decision
+    PTR_OPEN_UPI -->|"Yes"| PTR_OPEN_DONE["✅ REFUND DECISION: YES\nAuto-processes once closed + verified\nWiom Hub: confirm payout status"]:::resolve
+    PTR_OPEN_UPI -->|"No"| PTR_OPEN_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    PTR_HAS -->|"Closure attempted,\napproved"| PTR_DONE{"Payout state?"}:::decision
+    PTR_DONE -->|"Not triggered"| PTR_DONE_ESC["⚠️ REFUND DECISION: YES but stuck\nEscalate to tech team\nto trigger payout"]:::escalate
+    PTR_DONE -->|"Processing"| PTR_DONE_WAIT["REFUND DECISION: YES\nIn progress — inform customer:\nRazorpay settlement 1-3 days"]:::wait
+    PTR_DONE -->|"Failed"| PTR_DONE_NOUPI["REFUND DECISION: YES but failed\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+    PTR_DONE -->|"Success"| PTR_DONE_OK["✅ REFUND DECISION: YES — Complete\nShare txn ID + date + amount\nIf customer disputes: verify with bank"]:::resolve
+
+    PTR_HAS -->|"Closure attempted,\nREJECTED"| PTR_REJ["PUT path exhausted\n→ Global Scanner"]:::gist
+    PTR_HAS -->|"Expired / TAT over /\ndevice marked LOST"| PTR_EXP["→ Global Scanner"]:::gist
+    PTR_HAS -->|"No PUT exists\nin system"| PTR_NOPUT_LOC{"Check device\nlocation signal"}:::decision
+    PTR_NOPUT_LOC -->|"Partner office\nor installed at\nnew customer"| PTR_LOC_CONFIRM["Device location confirmed\nProceed to refund"]:::action
+    PTR_LOC_CONFIRM --> PTR_NOPUT_UPI{"UPI on file?"}:::decision
+    PTR_NOPUT_UPI -->|"Yes"| PTR_NOPUT_YES["REFUND DECISION: YES\nProcess refund via Wiom Hub"]:::resolve
+    PTR_NOPUT_UPI -->|"No"| PTR_NOPUT_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+    PTR_NOPUT_LOC -->|"Location unknown"| PTR_LOC_SCAN["Ask partner to scan device\nvia Global Scanner\nDevice photo taken + location confirmed\nThen proceed to refund"]:::gist
+    PTR_LOC_SCAN --> PTR_NOPUT_UPI
+
+    %% Global Scanner fallback
+    PTR_REJ --> GS["Ask partner to scan device\nvia Global Scanner\n🗣️ 'Scan it so it gets removed from\nyour lost section, you get penalised less'\nDo NOT mention it triggers refund"]:::gist
+    PTR_EXP --> GS
+    GS --> GS_UPI{"UPI on file?"}:::decision
+    GS_UPI -->|"Yes"| GS_DONE["Device: LOST → IN OFFICE\n✅ REFUND DECISION: YES\nRefund flow triggers automatically"]:::resolve
+    GS_UPI -->|"No"| GS_NOUPI["Device: LOST → IN OFFICE\nREFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    %% ============================================
+    %% 3. 3PL HAS DEVICE
+    %% ============================================
+    TPL --> TPL_ACT["3PL confirmation received\n(API or Email)\nAnurag reviews and confirms pickup"]:::action
+    TPL_ACT --> TPL_UPI{"UPI on file?"}:::decision
+    TPL_UPI -->|"Yes"| TPL_DONE["✅ REFUND DECISION: YES\nAnurag approves → refund processes\nTell customer to wait"]:::resolve
+    TPL_UPI -->|"No"| TPL_NOUPI["REFUND DECISION: YES\nAnurag approves\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    %% ============================================
+    %% 5. DEVICE AT WIOM WAREHOUSE
+    %% ============================================
+    WH_HAS -->|"Payout not triggered"| WH_NOTRIG["⚠️ REFUND DECISION: YES but stuck\nDevice recovered, refund didn't fire\nEscalate to tech team"]:::escalate
+
+    WH_HAS -->|"Triggered,\nprocessing"| WH_PROC["REFUND DECISION: YES — In progress\nInform customer:\nRazorpay settlement 1-3 days"]:::wait
+
+    WH_HAS -->|"Triggered,\nfailed"| WH_FAIL["REFUND DECISION: YES but failed\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+
+    WH_HAS -->|"Triggered,\nsuccess"| WH_OK["✅ REFUND DECISION: YES — Complete\nShare txn ID + date + amount\nIf customer disputes: verify with bank"]:::resolve
+
+    WH_HAS -->|"No UPI on file"| WH_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 2 ===================== -->
+<h2>2. No-UPI Flow — Two Streams</h2>
+<div class="context">
+    <strong>Context:</strong> Wiom has confirmed device location and decided to refund — but the customer has not submitted a UPI. Two streams: Stream 1 is system-triggered while the customer is still active. Stream 2 (Wiom Hub) only kicks in after the customer is archived and calls CS.<br><br>
+    <strong>Key rule:</strong> After PUT closes as Router_recovered, customer still has 28 days of app access (chat, UPI submission, etc). At day 28, customer is archived and loses app access. By the time Stream 2 is triggered, archival has already happened — no need to check again.<br><br>
+    <strong>Open question:</strong> For PUT expired + device returned to warehouse by 3PL/RA — how many days does the customer remain active on app before archival? Need to check.
+</div>
+
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef auto fill:#e3f2fd,stroke:#1565c0
+    classDef hub fill:#fce4ec,stroke:#c62828
+    classDef done fill:#c8e6c9,stroke:#388e3c
+    classDef end_ fill:#e0e0e0,stroke:#757575
+    classDef action fill:#fff3e0,stroke:#e65100
+    classDef decision fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef opstart fill:#1565c0,stroke:#0d47a1,color:#fff
+
+    TRIGGER["Wiom decision: REFUND ✅\nDevice confirmed recovered\nNo UPI on file"]:::opstart
+
+    TRIGGER --> S1["STREAM 1 — AUTOMATIC\n(System-triggered, within 28-day active window)"]:::auto
+
+    S1 --> WA_NUDGE1["📱 WhatsApp nudge #1 via Wiom:\n'Open app, submit UPI for your refund'"]
+    WA_NUDGE1 -->|"Customer opens app\nsubmits UPI"| AUTO_PAY["✅ Refund triggers automatically\nfrom backend"]:::done
+    WA_NUDGE1 -->|"No action"| WA_NUDGE2["📱 WhatsApp nudge #2 (reminder)"]
+    WA_NUDGE2 -->|"Customer submits"| AUTO_PAY
+    WA_NUDGE2 -->|"28 days pass"| ARCHIVE["Customer archived\nApp access revoked\nStream 1 ends"]:::end_
+
+    ARCHIVE --> CS_CALL{"Customer\ncalls CS?"}:::decision
+    CS_CALL -->|"No"| NO_REFUND["No refund processed\n(customer had 28 days + 2 nudges)"]:::end_
+    CS_CALL -->|"Yes"| S2["STREAM 2 — WIOM HUB\nCustomer is archived at this point\nOps opens Netbox Security Refund sub-tab"]:::hub
+
+    S2 --> SRC_CHECK{"Original payment\nsource available?"}:::decision
+
+    SRC_CHECK -->|"Yes"| SRC_SHOW["Option A — Refund to Source\nOps sees masked source details:\nHDFC card 4242 or jaivin-at-upi\nReads to customer for verbal confirmation"]:::action
+    SRC_SHOW --> SRC_CLICK["Ops clicks Refund to Source"]:::action
+    SRC_CLICK --> SRC_DONE["✅ Refund initiates to original payment method\nETA shown: UPI same day–3 days\nCard 5–7 days\n📱 WhatsApp: Initiated + Completed"]:::done
+
+    SRC_CHECK -->|"No"| WA_LINK["Option B — Send WhatsApp Refund Link\nOps clicks Send Refund Link via WhatsApp\nLink valid 10 minutes, 1 UPI per link"]:::action
+    WA_LINK --> PORTAL["Customer opens link in browser\n(no app login needed)\nOTP to registered mobile → verified\nCustomer enters UPI ID\nConfirm screen → Submit"]:::action
+    PORTAL --> AUTO_ARCH["✅ Backend auto-triggers refund\n📱 WhatsApp: Initiated + Completed\nWiom Hub: status updates for ops"]:::done
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 3 ===================== -->
+<h2>3. Dispute Handling — Customer vs Partner</h2>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef escalate fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef action fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+    classDef info fill:#e0e0e0,stroke:#757575,color:#424242
+    classDef future fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+
+    DISP["🚫 Customer says handed over\nPartner denies having device\nBoth sides contradicting"]:::escalate
+
+    DISP --> RULE["Do NOT refund customer\nEscalate to product team"]:::escalate
+
+    RULE --> WHY{"Why no refund?"}
+
+    WHY --> R1["Partner has ~₹600+ at stake\nif they don't close PUT\n(₹200 deposit + device bonus\n+ ₹200 for next install)\nPartner fraud unlikely —\nlying costs them more"]:::info
+
+    WHY --> R2["Customer already churned\nOne-time interaction\nNo future accountability\nLower trust baseline"]:::info
+
+    WHY --> R3["Partner pool is small (1200)\nPartners do this repeatedly\nPatterns will surface"]:::info
+
+    WHY --> R4["Refunding creates moral hazard\nWord spreads that calling\n+ claiming handover = ₹300"]:::info
+
+    RULE --> MSG["Tell customer:\n'We're unable to confirm device\nhandover. Once the device is\nlocated and returned, your refund\nwill be processed.'\nNot a 'no' — a 'not yet'"]:::action
+
+    RULE --> FUTURE["🔜 OTP handshake at PUT closure\nCustomer confirms handover via OTP\nEliminates this dispute entirely"]:::future
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 4 ===================== -->
+<h2>4. Refund Funnel — Where Are Customers Getting Stuck?</h2>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef terminal fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef gap fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef decision fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef wait fill:#fff9c4,stroke:#f9a825,color:#6d4c00
+    classDef node_ fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+
+    PUT["PUT Created\n(self-initiated + R15)"]:::node_
+
+    PUT --> UPI_Q{"UPI Submitted?"}:::decision
+    UPI_Q -->|"Yes"| RESOLVED_Q
+    UPI_Q -->|"No"| NOUPI_FLOW{"No-UPI Flow\ntriggered?"}:::decision
+    NOUPI_FLOW -->|"Yes"| NOUPI_ACT{"Customer submitted\nvia link?"}:::decision
+    NOUPI_ACT -->|"Yes"| RESOLVED_Q
+    NOUPI_ACT -->|"No"| NOUPI_STUCK["⚠️ Stuck\nunreachable / didn't act"]:::gap
+    NOUPI_FLOW -->|"No"| NOUPI_GAP["⚠️ Gap\nflow didn't fire"]:::gap
+
+    RESOLVED_Q{"PUT Resolved?"}:::decision
+
+    RESOLVED_Q -->|"Router_recovered"| RR_REFUND{"Refund\nprocessed?"}:::decision
+    RR_REFUND -->|"Yes"| RR_DONE["✅ TERMINAL"]:::terminal
+    RR_REFUND -->|"No"| RR_GAP["⚠️ Payout failed\nor not triggered"]:::gap
+
+    RESOLVED_Q -->|"Customer_recovered"| CR_DONE["✅ TERMINAL\nNo refund needed"]:::terminal
+
+    RESOLVED_Q -->|"PUT Expired\n(21-day TAT breach)"| EXP{"What happened\nto device?"}:::decision
+
+    EXP -->|"Installed at\nnew customer"| EXP_INST{"Old customer\nrefunded?"}:::decision
+    EXP_INST -->|"Yes"| EXP_INST_OK["✅ TERMINAL"]:::terminal
+    EXP_INST -->|"No"| EXP_INST_GAP["⚠️ Gap\ndevice moved, old cx\nnot refunded"]:::gap
+
+    EXP -->|"Partner scanned\nGlobal Scanner"| EXP_GS{"Refund\nprocessed?"}:::decision
+    EXP_GS -->|"Yes"| EXP_GS_OK["✅ TERMINAL"]:::terminal
+    EXP_GS -->|"No"| EXP_GS_GAP["⚠️ Gap\nscan didn't trigger refund"]:::gap
+
+    EXP -->|"3PL/RA collected\nfrom customer"| EXP_RA{"Device at\nwarehouse?"}:::decision
+    EXP_RA -->|"Yes"| EXP_RA_REF{"Refund\nprocessed?"}:::decision
+    EXP_RA_REF -->|"Yes"| EXP_RA_OK["✅ TERMINAL"]:::terminal
+    EXP_RA_REF -->|"No"| EXP_RA_GAP["⚠️ Gap\nwarehouse receipt, no refund"]:::gap
+    EXP_RA -->|"No"| EXP_RA_WAIT["In transit\n(waiting)"]:::wait
+
+    EXP -->|"Partner returned\nto warehouse"| EXP_WH{"Refund\nprocessed?"}:::decision
+    EXP_WH -->|"Yes"| EXP_WH_OK["✅ TERMINAL"]:::terminal
+    EXP_WH -->|"No"| EXP_WH_GAP["⚠️ Gap"]:::gap
+
+    EXP -->|"None of above"| EXP_LOST["⚠️ Device\nunaccounted"]:::gap
+
+    RESOLVED_Q -->|"PUT still open\n(within TAT)"| OPEN_WAIT["Waiting for partner\n(in progress, not a gap yet)"]:::wait
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 5 ===================== -->
+<h2>5. Gap Metrics — Watchlist</h2>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart LR
+    classDef sys fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef partner fill:#ffe0b2,stroke:#ef6c00,color:#4e2a00
+    classDef cx fill:#fff9c4,stroke:#f9a825,color:#6d4c00
+    classDef health fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+
+    subgraph SYS["System Gaps"]
+        direction TB
+        G1["PUT not created\nR15 hit but no PUT exists\n→ system bug, cx invisible"]:::sys
+        G4["Refund not processing\nRouter_recovered but\nno payout triggered"]:::sys
+        G7["Global Scanner not\ntriggering refund\nFallback path broken if > 0"]:::sys
+    end
+
+    subgraph PTR["Partner Gaps"]
+        direction TB
+        G3["Partner not closing PUT\nPUT expiry rate %\nTrack by partner"]:::partner
+        G6["Device re-installed,\nold cx not refunded\nSilent gap"]:::partner
+    end
+
+    subgraph CXG["Customer Gaps"]
+        direction TB
+        G2["UPI not submitted\nNo-UPI Flow triggered\nbut not completed %"]:::cx
+        G9["Disputes\nEscalations to product team\nDrops to zero after OTP ships"]:::cx
+    end
+
+    subgraph HEALTH["Overall Health"]
+        direction TB
+        G5["3PL/RA recovery slow\nPUT expiry → warehouse\nreceipt (days)"]:::health
+        G8["CS volume\nRefund calls per week\nShould trend down"]:::health
+        G10["End-to-end\nChurn → refund completion\n(days, median)"]:::health
+    end
+</pre>
+</div>
+
+</div><!-- end tab-cs -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 2: MANUAL REFUND — WIOM HUB                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tab-ops" class="tab-content">
+
+<h1>Manual Refund — Wiom Hub (Ops Portal)</h1>
+<p>Updated: 2026-04-01</p>
+
+<div class="context">
+    <strong>Premise:</strong> Device has been located and the refund decision has been made. This flow is not about identifying the signal — it is about what happens after. Ops lead uses Wiom Hub to process the refund manually.<br><br>
+    <strong>Entry point:</strong> Wiom Hub → <strong>Users tab</strong><br>
+    &nbsp;&nbsp;— Active customer: <em>Customers</em> → search by mobile → open record → <strong>Netbox Security Refund</strong> sub-tab<br>
+    &nbsp;&nbsp;— Archived customer: <em>Archived Customers</em> → search by mobile → open record → <strong>Netbox Security Refund</strong> sub-tab<br><br>
+    <strong>Access:</strong> Restricted to high-level members only (role-gated in Wiom Hub).<br>
+    <strong>Daily global limits:</strong> Capped by # of transactions AND total ₹ amount — whichever is hit first blocks further actions for the day. Alert sent to ops manager when limit is reached.
+</div>
+
+<div class="warn">
+    <strong>Open item — Refund amount:</strong> The exact amount to be refunded per customer is to be confirmed. Jaivin to take inputs from Bhavin before this goes to tech.
+</div>
+
+<!-- ===================== DIAGRAM 1 ===================== -->
+<h2>1. Wiom Hub — Ops Flow</h2>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#e3f2fd"></div> Ops Action</div>
+    <div class="legend-item"><div class="legend-color" style="background:#c8e6c9"></div> Refund Initiates</div>
+    <div class="legend-item"><div class="legend-color" style="background:#ffcdd2"></div> Blocked</div>
+    <div class="legend-item"><div class="legend-color" style="background:#fff9c4"></div> Waiting</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f3e5f5"></div> Decision</div>
+    <div class="legend-item"><div class="legend-color" style="background:#e0e0e0"></div> Disabled / V2</div>
+</div>
+
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef opstart fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef opaction fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+    classDef opresolve fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef opblocked fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef opdecision fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef opwait fill:#fff9c4,stroke:#f9a825,color:#6d4c00
+    classDef opdisabled fill:#e0e0e0,stroke:#9e9e9e,color:#616161
+
+    ENTRY["Ops opens Wiom Hub\nUsers - Customers or Archived Customers\nSearch by mobile\nOpen: Netbox Security Refund sub-tab"]:::opstart
+
+    ENTRY --> LIMIT{"Daily limit\nreached?"}:::opdecision
+    LIMIT -->|"Yes"| BLOCKED["Feature blocked\nLimit reached: X txns or Rs.Y total\nOps manager notified"]:::opblocked
+    LIMIT -->|"No"| LOAD["Load customer record\nCustomer name, Refund amount\nRefund status, UPI on file"]:::opaction
+
+    LOAD --> DONE{"Refund count = 1\nfor this customer?"}:::opdecision
+    DONE -->|"Yes"| SHOW_TXN["Refund already processed\nTxn ID, Amount, Date, Method\nNo further refund allowed\nApplies to system and manual both"]:::opblocked
+
+    DONE -->|"No"| REMARKS["Ops enters remarks\nReason for manual refund\nMandatory - cannot proceed without"]:::opaction
+    REMARKS --> UPI_CHECK{"UPI\non file?"}:::opdecision
+
+    %% PATH A - UPI EXISTS
+    UPI_CHECK -->|"Yes"| UPI_SHOW["Show UPI ID\nCTA: Process Refund\nOps verbally confirms with customer"]:::opaction
+    UPI_SHOW --> REFUND_UPI["Refund initiates\nShow: Status + ETA"]:::opresolve
+
+    %% PATH B - NO UPI
+    UPI_CHECK -->|"No"| TWO_OPT["Show two options:\nA - Refund to Source\nB - Refund to New UPI"]:::opaction
+
+    TWO_OPT --> SRC_AVL{"Original source\navailable?"}:::opdecision
+    SRC_AVL -->|"No"| SRC_OFF["Option A: Disabled\nOriginal payment source not available"]:::opdisabled
+    SRC_AVL -->|"Yes"| SRC_ON["Option A: Enabled\nSource details shown to ops\nHDFC card 4242 or jaivin-at-upi\nOps reads to customer for confirmation"]:::opaction
+    SRC_ON --> SRC_CLICK["Ops clicks Refund to Source"]:::opaction
+    SRC_CLICK --> REFUND_SRC["Refund initiates\nStatus + ETA shown\nUPI: same day to 3 days\nCard: 5 to 7 days"]:::opresolve
+
+    TWO_OPT --> ARCH_CHECK{"Customer\narchived?"}:::opdecision
+
+    %% B1 - ACTIVE CUSTOMER
+    ARCH_CHECK -->|"No - Active tab"| NOT_ARCH["Option B: Guide customer\nto open Wiom app\nand submit UPI from app"]:::opwait
+    NOT_ARCH --> POLL{"UPI submitted\nby customer?\nHub reflects when done"}:::opdecision
+    POLL -->|"Yes - UPI\nappears in Hub"| UPI_NEW_CTA["CTA activates:\nProcess Refund to new UPI\nOps clicks to confirm"]:::opaction
+    UPI_NEW_CTA --> REFUND_NEW["Refund initiates\nShow: Status + ETA"]:::opresolve
+    POLL -->|"Customer could not\nuse app"| V2["V2 - wait for archival\nthen use Archived Customers tab"]:::opdisabled
+
+    %% B2 - ARCHIVED CUSTOMER
+    ARCH_CHECK -->|"Yes - Archived tab"| ARCH_CTA["Option B: CTA\nSend Refund Link via WhatsApp\nto customer mobile"]:::opaction
+    ARCH_CTA --> WA_SENT["WhatsApp sent\nSent at time, Expires at time\nRegenerate Link CTA available"]:::opwait
+    WA_SENT --> PORTAL2["Customer completes\nCaptive Portal - see Diagram 2"]:::opaction
+    PORTAL2 --> AUTO["Refund auto-initiates\nHub status updates"]:::opresolve
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 2 ===================== -->
+<h2>2. Captive Portal Flow — Archived Customers</h2>
+<div class="context">
+    Triggered when ops clicks "Send Refund Link via WhatsApp" for an archived customer. Customer receives a WhatsApp message with a unique link. The link is valid for <strong>10 minutes</strong> and allows submission of exactly <strong>1 UPI ID</strong>. No app login required — works in any mobile browser.
+</div>
+
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef cpportal fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef cpstep fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+    classDef cpdone fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef cpfail fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef cpdead fill:#e0e0e0,stroke:#9e9e9e,color:#616161
+
+    WA["Customer receives WhatsApp\nClaim your security deposit refund\nLink valid for 10 minutes"]
+
+    WA --> LINK_CHECK{"Link valid?\nnot expired\nnot already used"}
+    LINK_CHECK -->|"Expired or used"| DEAD["Link no longer valid\nContact Wiom support for a new link\nOps can regenerate from Hub"]:::cpdead
+
+    LINK_CHECK -->|"Valid"| CPRT["Captive portal opens in browser\nVerify your identity\nMobile number pre-filled"]:::cpportal
+
+    CPRT --> OTP_SEND["Customer clicks Send OTP\nOTP sent to registered mobile"]:::cpstep
+    OTP_SEND --> OTP_IN["Customer enters 6-digit OTP"]:::cpstep
+    OTP_IN --> OTP_CHECK{"OTP correct\nand not expired?"}
+    OTP_CHECK -->|"No"| OTP_FAIL["Incorrect or expired OTP\nResend option shown"]:::cpfail
+    OTP_FAIL --> OTP_SEND
+    OTP_CHECK -->|"Yes"| UPI_IN["UPI input unlocked\nCustomer enters UPI ID"]:::cpstep
+
+    UPI_IN --> UPI_VAL{"UPI format\nvalid?"}
+    UPI_VAL -->|"No"| UPI_ERR["Invalid UPI ID\nPlease check and retry"]:::cpfail
+    UPI_ERR --> UPI_IN
+    UPI_VAL -->|"Yes"| CONFIRM["Refund will be sent to UPI ID entered\nConfirm or Change"]:::cpportal
+    CONFIRM -->|"Change"| UPI_IN
+    CONFIRM -->|"Confirm"| SUBMIT["UPI submitted and locked\nBackend auto-triggers refund\nWorks for archived customers"]:::cpdone
+
+    SUBMIT --> WA_INIT["WhatsApp: Refund has been initiated"]:::cpdone
+    WA_INIT --> WA_DONE["WhatsApp: Refund has been completed"]:::cpdone
+    SUBMIT --> HUB_UPDATE["Hub status updates for ops\nRefund initiated, ETA shown"]:::cpdone
+</pre>
+</div>
+
+<!-- ===================== TECH BUILD TABLE ===================== -->
+<h2>3. Tech Build Requirements</h2>
+<div class="diagram-container" style="padding:0; overflow:hidden;">
+<table>
+<thead>
+<tr>
+    <th style="width:40px;">#</th>
+    <th style="width:220px;">Component</th>
+    <th>What to build</th>
+    <th style="width:80px;">Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>1</td>
+    <td><strong>Wiom Hub sub-tab</strong></td>
+    <td>"Netbox Security Refund" sub-tab inside both <em>Customers</em> and <em>Archived Customers</em> views. Entry point for all manual refunds. Shows: customer name, refund amount*, refund status, UPI on file, payment source availability, action history.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>2</td>
+    <td><strong>Customer record fetch</strong></td>
+    <td>On mobile number search: fetch refund status, locked refund amount*, UPI on file (if any), original payment source availability flag + masked source details (e.g. "HDFC card ••••4242", "jaivin@upi").</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>3</td>
+    <td><strong>Already-processed guard</strong></td>
+    <td>Before showing any action CTA, check if refund has already been processed for this customer. If yes: show txn details and disable all buttons. Prevents double payout.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>4</td>
+    <td><strong>Process refund — existing UPI</strong></td>
+    <td>CTA triggers Razorpay payout to the UPI ID already on file. Returns status and ETA. Audit log entry created.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>5</td>
+    <td><strong>Payment source availability check</strong></td>
+    <td>Backend checks if original Razorpay payment_id is available and still refundable. Surfaces masked source details to Hub. Enables/disables "Refund to Source" button accordingly. Must account for Razorpay's time limits per payment type (cards vs UPI).</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>6</td>
+    <td><strong>Process refund — to source</strong></td>
+    <td>Razorpay refund-to-source using stored payment_id. Returns status and method-specific ETA (UPI: same day–3 days; Card: 5–7 days). ETA shown to ops so they can communicate to customer. Audit log entry created.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>7</td>
+    <td><strong>UPI polling — active customers</strong></td>
+    <td>After ops guides active customer to enter UPI in app: Hub reflects UPI submission when it happens. "Process Refund" CTA activates once UPI appears. Ops then clicks to initiate payout. (Polling or push update from backend.)</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>8</td>
+    <td><strong>WhatsApp refund link — send</strong></td>
+    <td>Generate unique, time-expiring (10 min) link for the customer. Send via Gupshup to registered mobile. Hub shows: sent timestamp, expiry time, delivery status. Ops can click "Regenerate Link" after expiry to re-send.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>9</td>
+    <td><strong>Captive portal</strong></td>
+    <td>Hosted web page (no app login). Flow: link validity check → OTP to registered mobile → OTP verify → UPI entry → UPI format validation → confirm screen → submit. Works on any mobile browser. Supports archived customers. 1 UPI per link.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>10</td>
+    <td><strong>Auto-trigger refund on UPI submit</strong></td>
+    <td>On UPI submission via captive portal, backend auto-triggers payout for the locked refund amount. Must work for archived customers (refund logic must not gate on account being active). Idempotent — cannot fire twice for the same link.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>11</td>
+    <td><strong>WhatsApp confirmations to customer</strong></td>
+    <td>Two messages via Gupshup to customer mobile: (1) "Refund of ₹XXX initiated" immediately on trigger. (2) "Refund of ₹XXX completed" on Razorpay settlement confirmation. Works for all refund paths (source, existing UPI, new UPI).</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>12</td>
+    <td><strong>Ops remarks (mandatory)</strong></td>
+    <td>Before any refund CTA is enabled, ops must enter a free-text remarks field stating the reason for manual refund (e.g. "CS confirmed device at partner", "3PL dispatch note received"). Field is mandatory — CTA stays disabled until remarks are saved. Remarks stored in audit log against the refund record.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>13</td>
+    <td><strong>Refund count = 1 per customer</strong></td>
+    <td>Once a refund is processed for a customer (via system OR manual), the refund count for that customer is set to 1. Any future refund attempt — manual or system-triggered — is blocked automatically. Count is surfaced in the Hub record. Applies globally: manual refund blocks system refund and vice versa.</td>
+    <td><span class="badge badge-high">High</span></td>
+</tr>
+<tr>
+    <td>14</td>
+    <td><strong>Daily global limits</strong></td>
+    <td>Two counters reset at midnight: (a) # of transactions processed, (b) total amount disbursed. CTA blocked when either limit is hit. Hub shows current usage vs limit. Alert sent to ops manager when limit is reached. Limits configurable by admin.</td>
+    <td><span class="badge badge-med">Med</span></td>
+</tr>
+<tr>
+    <td>15</td>
+    <td><strong>Role-based access control</strong></td>
+    <td>Entire Netbox Security Refund sub-tab visible only to designated high-level roles in Wiom Hub. Admin can add/remove access. Unauthorised users see the sub-tab as hidden or show a "no access" state.</td>
+    <td><span class="badge badge-med">Med</span></td>
+</tr>
+<tr>
+    <td>16</td>
+    <td><strong>Audit trail</strong></td>
+    <td>Every action logged to backend: agent ID, timestamp, customer mobile, action taken (link sent / refund triggered / regenerate), outcome (initiated / failed / expired). Surfaced in the sub-tab as an action history table. Required for reconciliation and fraud review.</td>
+    <td><span class="badge badge-med">Med</span></td>
+</tr>
+</tbody>
+</table>
+<p style="padding:12px 16px; font-size:12px; color:#757575; margin:0;">* Refund amount to be confirmed with Bhavin — Jaivin to follow up before this goes to tech.</p>
+</div>
+
+<!-- ===================== OPEN ITEMS ===================== -->
+<h2>4. Open Items — Decisions Needed Before Tech Kickoff</h2>
+
+<div class="open-item">
+    <strong>1. Refund amount</strong> — What is the exact amount refunded per customer? Is it always ₹300, or does it vary? Is it stored as a locked field in DB against the customer? <em>Jaivin to confirm with Bhavin.</em>
+</div>
+<div class="open-item">
+    <strong>2. Daily limit values</strong> — What are the exact thresholds? (# of transactions per day + ₹ total per day.) To be defined before feature goes live.
+</div>
+<div class="open-item">
+    <strong>3. Razorpay source refund time limits</strong> — Does Razorpay impose a time window for refund-to-source per payment type? Cards are typically ~180 days. UPI has no cap. Wallet? This determines whether "Refund to Source" is viable for older churns.
+</div>
+<div class="open-item">
+    <strong>4. Refund ETAs by payment method</strong> — Confirm exact Razorpay SLAs for each type (UPI / card / wallet) so ops can communicate accurately to customer on the same call.
+</div>
+<div class="open-item">
+    <strong>5. Which roles get access</strong> — List of Wiom Hub roles that should be able to see the Netbox Security Refund sub-tab. To be defined by ops lead before access control is built.
+</div>
+<div class="open-item">
+    <strong>6. Active customer UPI path — refund trigger ownership</strong> — After customer enters UPI in app and it reflects in Hub, ops clicks to trigger the refund manually. This is the agreed V1 design. Confirm no auto-trigger should fire from the app side to avoid a race condition.
+</div>
+
+</div><!-- end tab-ops -->
+
+
+<script>
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // Mermaid cannot render inside display:none containers.
+    // Fix: initialise with startOnLoad:false, briefly show all tabs so every
+    // diagram gets rendered, then re-hide the inactive ones.
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+        securityLevel: 'loose'
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Make all tabs temporarily visible so Mermaid can render their diagrams
+        document.querySelectorAll('.tab-content').forEach(el => {
+            el.style.display = 'block';
+        });
+
+        mermaid.run({ querySelector: '.mermaid' }).then(function () {
+            // After rendering, restore the CSS-class-driven visibility
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.style.display = '';
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
