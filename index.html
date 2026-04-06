@@ -199,10 +199,10 @@ flowchart TD
     %% ============================================
     %% 3. 3PL HAS DEVICE
     %% ============================================
-    TPL --> TPL_ACT["Wiom receives 3PL pickup signal\nDevice confirmed collected from customer\nTell customer to wait"]:::action
+    TPL --> TPL_ACT["3PL confirmation received\n(API or Email)\nAnurag reviews and confirms pickup"]:::action
     TPL_ACT --> TPL_UPI{"UPI on file?"}:::decision
-    TPL_UPI -->|"Yes"| TPL_DONE["✅ REFUND DECISION: YES\nAuto-processes on 3PL pickup signal\nTell customer to wait"]:::resolve
-    TPL_UPI -->|"No"| TPL_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+    TPL_UPI -->|"Yes"| TPL_DONE["✅ REFUND DECISION: YES\nAnurag approves → refund processes\nTell customer to wait"]:::resolve
+    TPL_UPI -->|"No"| TPL_NOUPI["REFUND DECISION: YES\nAnurag approves\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
     %% ============================================
     %% 5. DEVICE AT WIOM WAREHOUSE
