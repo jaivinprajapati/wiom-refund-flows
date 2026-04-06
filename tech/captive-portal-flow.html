@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Netbox Refund — Captive Portal Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f5f5f5;
+      color: #212121;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    /* ── State switcher (design tool) ── */
+    .state-switcher {
+      background: #fff8e1;
+      border: 1px solid #f9a825;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 480px;
+    }
+    .state-switcher label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6d4c00; }
+    .state-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid #f9a825;
+      background: transparent;
+      font-size: 12px;
+      cursor: pointer;
+      color: #6d4c00;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .state-btn:hover, .state-btn.active { background: #f9a825; color: #fff; border-color: #f9a825; font-weight: 600; }
+
+    /* ── Phone shell ── */
+    .phone {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+
+    .phone-header {
+      background: rgb(217,0,141);
+      padding: 20px 20px 16px;
+      color: #fff;
+    }
+    .phone-header-logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .phone-header-sub {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .phone-body { padding: 24px 20px; }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Typography ── */
+    .screen-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #212121;
+      margin-bottom: 6px;
+    }
+    .screen-sub {
+      font-size: 13px;
+      color: #757575;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .screen-sub strong { color: #212121; }
+
+    /* ── Amount badge ── */
+    .amount-badge {
+      background: rgba(217,0,141,0.07);
+      border: 1px solid rgba(217,0,141,0.25);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .amount-badge .material-icons { color: rgb(217,0,141); font-size: 28px; }
+    .amount-label { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .amount-value { font-size: 22px; font-weight: 700; color: rgb(217,0,141); }
+
+    /* ── Input ── */
+    .input-group { margin-bottom: 18px; }
+    .input-label { font-size: 12px; font-weight: 500; color: #424242; margin-bottom: 6px; }
+    .input-field {
+      width: 100%;
+      border: 1px solid #bdbdbd;
+      border-radius: 4px;
+      padding: 11px 12px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      color: #212121;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input-field:focus { border-color: rgb(217,0,141); }
+    .input-field::placeholder { color: #bdbdbd; }
+    .input-field.otp {
+      letter-spacing: 8px;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .input-hint { font-size: 11px; color: #9e9e9e; margin-top: 5px; }
+
+    /* ── OTP timer ── */
+    .otp-resend {
+      font-size: 12px;
+      color: #757575;
+      text-align: center;
+      margin-top: 14px;
+    }
+    .otp-resend a { color: rgb(217,0,141); text-decoration: none; font-weight: 500; cursor: pointer; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: 'Roboto', sans-serif;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn .material-icons { font-size: 18px; }
+    .btn-primary { background: rgb(217,0,141); color: #fff; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost { background: transparent; color: #757575; border: 1px solid #e0e0e0; margin-top: 10px; }
+    .btn-ghost:hover { background: #f5f5f5; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 20px 0; }
+
+    /* ── UPI confirm card ── */
+    .confirm-card {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .confirm-label { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .confirm-value { font-size: 15px; font-weight: 600; color: #212121; }
+    .confirm-name { font-size: 12px; color: #757575; margin-top: 2px; }
+
+    /* ── Info rows ── */
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row-label { color: #757575; }
+    .info-row-value { font-weight: 500; color: #212121; }
+
+    /* ── Alert ── */
+    .alert {
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .alert .material-icons { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .alert-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .alert-body { font-size: 12px; line-height: 1.5; color: #555; }
+    .alert-success { background: #e8f5e9; }
+    .alert-success .material-icons, .alert-success .alert-title { color: #2e7d32; }
+    .alert-error { background: #ffebee; }
+    .alert-error .material-icons, .alert-error .alert-title { color: #c62828; }
+
+    /* ── Step dots ── */
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #e0e0e0;
+    }
+    .step-dot.active { background: rgb(217,0,141); }
+    .step-dot.done { background: #a5d6a7; }
+
+    /* ── Footer ── */
+    .phone-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #f0f0f0;
+      text-align: center;
+      font-size: 11px;
+      color: #bdbdbd;
+    }
+
+    /* ── Expired screen ── */
+    .expired-icon {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .expired-icon .material-icons {
+      font-size: 52px;
+      color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- State switcher -->
+  <div class="state-switcher">
+    <label>Screen</label>
+    <button class="state-btn active" onclick="setState('landing')">1. Landing</button>
+    <button class="state-btn" onclick="setState('otp')">2. OTP</button>
+    <button class="state-btn" onclick="setState('upi-entry')">3. UPI Entry</button>
+    <button class="state-btn" onclick="setState('upi-confirm')">4. UPI Confirm</button>
+    <button class="state-btn" onclick="setState('success')">5. Success</button>
+    <button class="state-btn" onclick="setState('expired')">Expired link</button>
+    <button class="state-btn" onclick="setState('invalid-upi')">Invalid UPI</button>
+  </div>
+
+  <div class="phone">
+    <div class="phone-header">
+      <div class="phone-header-logo">wiom</div>
+      <div class="phone-header-sub">Security Deposit Refund</div>
+    </div>
+
+    <div class="phone-body">
+
+      <!-- ── SCREEN 1: Landing ── -->
+      <div class="screen active" id="screen-landing">
+        <div class="steps">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="screen-title">Claim your refund</div>
+        <div class="screen-sub">Hi <strong>Ramesh</strong>, your security deposit refund is ready. Verify your number to proceed.</div>
+
+        <div class="amount-badge">
+          <span class="material-icons">account_balance_wallet</span>
+          <div>
+            <div class="amount-label">Refund amount</div>
+            <div class="amount-value">₹300</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Registered mobile number</div>
+          <input class="input-field" type="tel" value="98XXXXXX12" readonly style="background:#fafafa; color:#9e9e9e;">
+          <div class="input-hint">OTP will be sent to this number</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="setState('otp', this)">
+          <span class="material-icons">sms</span> Send OTP
+        </button>
+      </div>
+
+      <!-- ── SCREEN 2: OTP ── -->
+      <div class="screen" id="screen-otp">
+        <div class="steps">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="screen-title">Enter OTP</div>
+        <div class="screen-sub">We've sent a 6-digit OTP to <strong>98XXXXXX12</strong>. Valid for 10 minutes.</div>
+
+        <div class="input-group">
+          <input class="input-field otp" type="tel" maxlength="6" placeholder="——————" value="847291">
+        </div>
+
+        <div class="otp-resend">Didn't receive it? <a>Resend OTP</a></div>
+
+        <hr class="divider">
+
+        <button class="btn btn-primary" onclick="setState('upi-entry', this)">
+          Verify
+        </button>
+      </div>
+
+      <!-- ── SCREEN 3: UPI Entry ── -->
+      <div class="screen" id="screen-upi-entry">
+        <div class="steps">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <div class="screen-title">Enter UPI ID</div>
+        <div class="screen-sub">Refund of <strong>₹300</strong> will be sent to this UPI. Make sure it's correct — this can't be changed later.</div>
+
+        <div class="input-group">
+          <div class="input-label">UPI ID</div>
+          <input class="input-field" type="text" placeholder="yourname@upi" value="ramesh.kumar@okaxis">
+          <div class="input-hint">e.g. name@okaxis, name@ybl, name@paytm</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="setState('upi-confirm', this)">
+          Continue
+        </button>
+      </div>
+
+      <!-- ── SCREEN 4: UPI Confirm ── -->
+      <div class="screen" id="screen-upi-confirm">
+        <div class="steps">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <div class="screen-title">Confirm refund</div>
+        <div class="screen-sub">Please review the details before confirming.</div>
+
+        <div class="confirm-card">
+          <div class="confirm-label">Refund to</div>
+          <div class="confirm-value">ramesh.kumar@okaxis</div>
+          <div class="confirm-name">Ramesh Kumar · HDFC Bank</div>
+        </div>
+
+        <div class="info-row">
+          <span class="info-row-label">Amount</span>
+          <span class="info-row-value">₹300</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">ETA</span>
+          <span class="info-row-value">Same day – 3 business days</span>
+        </div>
+        <div class="info-row" style="margin-bottom:20px;">
+          <span class="info-row-label">Mobile</span>
+          <span class="info-row-value">98XXXXXX12</span>
+        </div>
+
+        <button class="btn btn-primary" onclick="setState('success', this)">
+          <span class="material-icons">check</span> Confirm & Claim Refund
+        </button>
+        <button class="btn btn-ghost" onclick="setState('upi-entry', this)">
+          Edit UPI
+        </button>
+      </div>
+
+      <!-- ── SCREEN 5: Success ── -->
+      <div class="screen" id="screen-success">
+        <div class="alert alert-success">
+          <span class="material-icons">check_circle</span>
+          <div>
+            <div class="alert-title">Refund initiated!</div>
+            <div class="alert-body">You'll receive a WhatsApp confirmation once the refund is processed.</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <span class="info-row-label">Amount</span>
+          <span class="info-row-value">₹300</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Refund to</span>
+          <span class="info-row-value">ramesh.kumar@okaxis</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">ETA</span>
+          <span class="info-row-value">Same day – 3 business days</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Reference</span>
+          <span class="info-row-value" style="color:#9e9e9e; font-weight:400;">TXN-9102XXXX</span>
+        </div>
+
+        <hr class="divider">
+        <div style="text-align:center; font-size:12px; color:#9e9e9e;">This page is no longer active. You may close this tab.</div>
+      </div>
+
+      <!-- ── SCREEN: Expired link ── -->
+      <div class="screen" id="screen-expired">
+        <div class="expired-icon">
+          <span class="material-icons">link_off</span>
+        </div>
+        <div class="screen-title" style="text-align:center; margin-bottom:8px;">Link expired</div>
+        <div class="screen-sub" style="text-align:center;">This refund link has expired. Please call Wiom support and we'll send you a new one.</div>
+
+        <hr class="divider">
+        <div style="text-align:center;">
+          <a href="tel:+918069007000" style="display:inline-flex; align-items:center; gap:6px; color:rgb(217,0,141); font-weight:500; font-size:13px; text-decoration:none;">
+            <span class="material-icons" style="font-size:16px;">call</span> Call Wiom Support
+          </a>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Invalid UPI ── -->
+      <div class="screen" id="screen-invalid-upi">
+        <div class="steps">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <div class="screen-title">Enter UPI ID</div>
+        <div class="screen-sub">Refund of <strong>₹300</strong> will be sent to this UPI. Make sure it's correct — this can't be changed later.</div>
+
+        <div class="alert alert-error" style="margin-bottom:14px;">
+          <span class="material-icons">error_outline</span>
+          <div>
+            <div class="alert-title">UPI not found</div>
+            <div class="alert-body">We couldn't verify this UPI ID. Please check and try again.</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">UPI ID</div>
+          <input class="input-field" type="text" value="ramesh.kumar@wrongbank" style="border-color:#c62828;">
+          <div class="input-hint" style="color:#c62828;">This UPI ID could not be verified</div>
+        </div>
+
+        <button class="btn btn-primary" onclick="setState('upi-confirm', this)">
+          Continue
+        </button>
+      </div>
+
+    </div><!-- /phone-body -->
+
+    <div class="phone-footer">
+      Powered by wiom · Secure payment via Razorpay
+    </div>
+  </div><!-- /phone -->
+
+<script>
+  const screens = ['landing','otp','upi-entry','upi-confirm','success','expired','invalid-upi'];
+
+  function setState(s, btn) {
+    screens.forEach(id => {
+      const el = document.getElementById('screen-' + id);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById('screen-' + s);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    // find and activate the matching switcher button
+    document.querySelectorAll('.state-btn').forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + s + "'")) {
+        b.classList.add('active');
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
