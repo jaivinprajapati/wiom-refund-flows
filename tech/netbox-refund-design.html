@@ -459,7 +459,7 @@
           <label>State</label>
           <button class="state-btn" onclick="setState('limit')">Daily limit reached</button>
           <button class="state-btn" onclick="setState('done')">Already refunded</button>
-          <button class="state-btn active" onclick="setState('upi')">UPI submitted</button>
+          <button class="state-btn active" onclick="setState('upi')">Customer submitted UPI</button>
           <button class="state-btn" onclick="setState('source')">No UPI — source available</button>
           <button class="state-btn" onclick="setState('nosource')">No UPI — no source</button>
           <button class="state-btn" onclick="setState('wasent')">WA link sent</button>
@@ -527,9 +527,9 @@
 
           <!-- UPI path -->
           <div class="card">
-            <div class="card-title">Refund to customer's UPI</div>
+            <div class="card-title">Refund to submitted UPI</div>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-              <span class="info-label">UPI</span>
+              <span class="info-label">Customer's UPI</span>
               <span class="chip pink">ramesh.kumar@okaxis</span>
             </div>
             <div style="font-size:12px; color:#757575; margin-bottom:14px;">Verbally confirm this UPI with the customer before proceeding.</div>
@@ -576,7 +576,7 @@
             <div class="option-title">Refund to original payment source</div>
             <div class="option-desc">Refund will be sent to the original payment instrument used at the time of booking. Source details are not visible at our end — if the customer asks, inform them the refund will reach the same account they paid from.</div>
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
-              <span class="source-badge"><span class="material-icons">account_balance</span> Original payment source on file</span>
+              <span class="source-badge"><span class="material-icons">account_balance</span> Original payment source</span>
               <span style="font-size:12px; color:#757575;">ETA: 3–5 business days</span>
             </div>
             <button class="btn btn-outlined" id="source-action-btn" disabled onclick="showConfirmSource()">Refund to Source</button>

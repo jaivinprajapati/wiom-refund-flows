@@ -2,783 +2,316 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PRD — Netbox Security Refund (Manual)</title>
+  <title>PRD — Netbox Security Refund</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a1a; font-size: 14px; line-height: 1.6; }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #fff;
-      color: #1a1a1a;
-      font-size: 15px;
-      line-height: 1.7;
-    }
-
-    /* ── Layout ── */
     .layout { display: flex; min-height: 100vh; }
 
     .toc {
-      width: 240px;
-      flex-shrink: 0;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      padding: 32px 16px;
-      border-right: 1px solid #f0f0f0;
-      background: #fafafa;
+      width: 220px; flex-shrink: 0; position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; padding: 28px 14px; border-right: 1px solid #f0f0f0; background: #fafafa;
     }
-    .toc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #9e9e9e; margin-bottom: 14px; }
-    .toc a {
-      display: block;
-      font-size: 13px;
-      color: #555;
-      text-decoration: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-bottom: 2px;
-      transition: all 0.12s;
-    }
-    .toc a:hover { background: #f0f0f0; color: #1a1a1a; }
-    .toc a.l2 { padding-left: 18px; font-size: 12px; color: #888; }
-    .toc a.l2:hover { color: #555; }
-    .toc-sep { border: none; border-top: 1px solid #ebebeb; margin: 10px 0; }
+    .toc-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 12px; }
+    .toc a { display: block; font-size: 12px; color: #666; text-decoration: none; padding: 3px 8px; border-radius: 4px; margin-bottom: 1px; }
+    .toc a:hover { background: #ebebeb; color: #111; }
+    .toc a.l2 { padding-left: 16px; color: #999; font-size: 11px; }
+    .toc hr { border: none; border-top: 1px solid #ebebeb; margin: 8px 0; }
 
-    .doc { flex: 1; max-width: 820px; padding: 48px 56px 80px; }
+    .doc { flex: 1; max-width: 760px; padding: 44px 52px 80px; }
 
-    /* ── Header ── */
-    .doc-header { margin-bottom: 40px; }
-    .doc-tag {
-      display: inline-block;
-      background: rgba(217,0,141,0.1);
-      color: rgb(217,0,141);
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      margin-bottom: 12px;
-    }
-    .doc-title { font-size: 32px; font-weight: 700; color: #111; line-height: 1.25; margin-bottom: 10px; }
-    .doc-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 14px; }
-    .meta-item { font-size: 13px; color: #888; }
-    .meta-item strong { color: #444; }
+    .doc-tag { display: inline-block; background: rgba(217,0,141,0.1); color: rgb(217,0,141); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 2px 9px; border-radius: 20px; margin-bottom: 10px; }
+    .doc-title { font-size: 28px; font-weight: 700; color: #111; margin-bottom: 8px; }
+    .doc-meta { display: flex; gap: 20px; flex-wrap: wrap; font-size: 12px; color: #999; margin-top: 10px; margin-bottom: 36px; }
+    .doc-meta strong { color: #555; }
 
-    /* ── Sections ── */
-    h2 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #111;
-      margin: 48px 0 14px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #f0f0f0;
-      scroll-margin-top: 24px;
-    }
-    h3 {
-      font-size: 15px;
-      font-weight: 600;
-      color: #222;
-      margin: 28px 0 10px;
-      scroll-margin-top: 24px;
-    }
-    h4 {
-      font-size: 13px;
-      font-weight: 600;
-      color: #444;
-      margin: 18px 0 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    p { margin-bottom: 12px; color: #333; }
+    h2 { font-size: 17px; font-weight: 700; color: #111; margin: 40px 0 12px; padding-bottom: 7px; border-bottom: 2px solid #f0f0f0; scroll-margin-top: 20px; }
+    h3 { font-size: 13px; font-weight: 600; color: #333; margin: 22px 0 8px; scroll-margin-top: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
 
-    /* ── Lists ── */
-    ul, ol { padding-left: 22px; margin-bottom: 14px; }
-    li { margin-bottom: 5px; color: #333; }
+    ul, ol { padding-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 4px; color: #444; font-size: 13px; }
     li::marker { color: rgb(217,0,141); }
 
-    /* ── Callout boxes ── */
-    .callout {
-      border-radius: 6px;
-      padding: 14px 18px;
-      margin: 16px 0;
-      display: flex;
-      gap: 12px;
-    }
-    .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-    .callout-body { flex: 1; font-size: 14px; line-height: 1.6; }
-    .callout-body strong { display: block; margin-bottom: 4px; font-size: 13px; }
-    .callout-info { background: #e8f4fd; border-left: 4px solid #1976d2; }
-    .callout-info .callout-icon { color: #1976d2; }
-    .callout-warn { background: #fff8e1; border-left: 4px solid #f9a825; }
-    .callout-warn .callout-icon { color: #e65100; }
-    .callout-success { background: #e8f5e9; border-left: 4px solid #388e3c; }
-    .callout-success .callout-icon { color: #388e3c; }
-    .callout-pink { background: rgba(217,0,141,0.06); border-left: 4px solid rgb(217,0,141); }
-    .callout-pink .callout-icon { color: rgb(217,0,141); }
-
-    /* ── Table ── */
-    table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
-    th { background: #f5f5f5; text-align: left; padding: 9px 14px; font-weight: 600; color: #444; border: 1px solid #e8e8e8; }
-    td { padding: 9px 14px; border: 1px solid #e8e8e8; color: #333; vertical-align: top; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 12px; }
+    th { background: #f5f5f5; text-align: left; padding: 8px 12px; font-weight: 600; color: #444; border: 1px solid #e8e8e8; }
+    td { padding: 8px 12px; border: 1px solid #e8e8e8; color: #444; vertical-align: top; }
     tr:hover td { background: #fafafa; }
 
-    /* ── Screen cards ── */
-    .screen-card {
-      border: 1px solid #e8e8e8;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      overflow: hidden;
-    }
-    .screen-card-header {
-      background: #f8f8f8;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #e8e8e8;
-    }
-    .screen-num {
-      background: rgb(217,0,141);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .screen-name { font-size: 14px; font-weight: 600; color: #222; }
-    .screen-tag { font-size: 11px; background: #f0f0f0; border-radius: 20px; padding: 2px 8px; color: #666; }
-    .screen-body { padding: 14px 16px; }
-    .screen-body ul { margin-bottom: 8px; }
+    .callout { border-radius: 5px; padding: 10px 14px; margin: 12px 0; font-size: 13px; color: #444; }
+    .callout-warn { background: #fff8e1; border-left: 3px solid #f9a825; }
+    .callout-info { background: #e8f4fd; border-left: 3px solid #1976d2; }
 
-    /* ── Path badge ── */
-    .path-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      border-radius: 4px;
-      padding: 2px 9px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .path-a { background: #e8f5e9; color: #2e7d32; }
-    .path-b1 { background: #e3f2fd; color: #1565c0; }
-    .path-b2 { background: #f3e5f5; color: #6a1b9a; }
-    .path-guard { background: #ffebee; color: #c62828; }
+    code { background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 3px; padding: 1px 5px; font-size: 11px; font-family: monospace; color: #c2185b; }
 
-    /* ── Flow step ── */
-    .flow-steps { margin: 16px 0; }
-    .flow-step {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 4px;
-      position: relative;
-    }
-    .flow-step:not(:last-child)::before {
-      content: '';
-      position: absolute;
-      left: 12px;
-      top: 26px;
-      bottom: -4px;
-      width: 1px;
-      background: #e0e0e0;
-    }
-    .flow-dot {
-      width: 24px; height: 24px;
-      border-radius: 50%;
-      background: #f5f5f5;
-      border: 2px solid #e0e0e0;
-      flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #757575;
-      margin-top: 2px;
-    }
-    .flow-dot.pink { background: rgba(217,0,141,0.1); border-color: rgb(217,0,141); color: rgb(217,0,141); }
-    .flow-content { flex: 1; padding-bottom: 14px; }
-    .flow-label { font-size: 14px; font-weight: 500; color: #222; margin-bottom: 2px; }
-    .flow-desc { font-size: 13px; color: #757575; }
-
-    /* ── Open items ── */
-    .open-item {
-      display: flex;
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #f5f5f5;
-    }
-    .open-item:last-child { border-bottom: none; }
-    .open-dot { width: 8px; height: 8px; border-radius: 50%; background: #f9a825; flex-shrink: 0; margin-top: 7px; }
-    .open-body { flex: 1; }
-    .open-q { font-size: 14px; font-weight: 500; color: #222; }
-    .open-note { font-size: 12px; color: #9e9e9e; margin-top: 2px; }
-
-    /* ── Code / mono ── */
-    code {
-      background: #f5f5f5;
-      border: 1px solid #e8e8e8;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-size: 12px;
-      font-family: 'Menlo', 'Consolas', monospace;
-      color: #c2185b;
-    }
-
-    /* ── Links ── */
     a { color: rgb(217,0,141); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    /* ── Divider ── */
-    hr { border: none; border-top: 1px solid #f0f0f0; margin: 32px 0; }
+    hr { border: none; border-top: 1px solid #f0f0f0; margin: 28px 0; }
 
-    /* ── Tag row ── */
-    .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-    .tag { font-size: 12px; background: #f5f5f5; border: 1px solid #e8e8e8; border-radius: 4px; padding: 2px 9px; color: #555; }
+    .open-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+    .open-item:last-child { border-bottom: none; }
+    .open-dot { width: 7px; height: 7px; border-radius: 50%; background: #f9a825; flex-shrink: 0; margin-top: 6px; }
+    .open-q { font-size: 13px; font-weight: 500; color: #222; }
+    .open-note { font-size: 11px; color: #aaa; margin-top: 2px; }
   </style>
 </head>
 <body>
 <div class="layout">
 
-  <!-- TOC -->
   <nav class="toc">
     <div class="toc-title">Contents</div>
     <a href="#overview">Overview</a>
-    <a href="#context">Context & Problem</a>
-    <a href="#users">Users</a>
+    <a href="#problem">Problem</a>
     <a href="#scope">Scope</a>
-    <hr class="toc-sep">
-    <a href="#hub">Module 1 — Wiom Hub</a>
-    <a href="#hub-entry" class="l2">Entry points</a>
-    <a href="#hub-guards" class="l2">Guard conditions</a>
+    <hr>
+    <a href="#hub">Wiom Hub Sub-tab</a>
+    <a href="#hub-guards" class="l2">Guards</a>
     <a href="#hub-paths" class="l2">Refund paths</a>
     <a href="#hub-checklist" class="l2">Pre-action checklist</a>
-    <a href="#hub-screens" class="l2">Screens</a>
-    <hr class="toc-sep">
-    <a href="#captive">Module 2 — Captive Portal</a>
-    <a href="#captive-flow" class="l2">Full flow</a>
+    <a href="#hub-screens" class="l2">All screens</a>
+    <hr>
+    <a href="#captive">Captive Portal</a>
+    <a href="#captive-flow" class="l2">Flow</a>
     <a href="#captive-screens" class="l2">Screens</a>
-    <hr class="toc-sep">
+    <hr>
     <a href="#rules">Business Rules</a>
-    <a href="#access">Access Control</a>
+    <a href="#access">Access</a>
     <a href="#notifications">Notifications</a>
     <a href="#open">Open Items</a>
-    <a href="#links">Links</a>
+    <a href="#tickets">Tickets & Links</a>
   </nav>
 
-  <!-- Document -->
   <div class="doc">
 
-    <div class="doc-header">
-      <div class="doc-tag">PRD</div>
-      <div class="doc-title">Netbox Security Refund<br>Manual Refund Portal</div>
-      <div class="doc-meta">
-        <span class="meta-item"><strong>Board</strong> CX</span>
-        <span class="meta-item"><strong>Tickets</strong> <a href="https://wiom.atlassian.net/browse/CX-1080">CX-1080</a>, <a href="https://wiom.atlassian.net/browse/CX-1081">CX-1081</a></span>
-        <span class="meta-item"><strong>Author</strong> Jaivin Prajapati</span>
-        <span class="meta-item"><strong>Last updated</strong> 6 Apr 2026</span>
-        <span class="meta-item"><strong>Status</strong> In Review</span>
-      </div>
+    <div class="doc-tag">PRD</div>
+    <div class="doc-title">Netbox Security Refund — Manual Portal</div>
+    <div class="doc-meta">
+      <span><strong>Author</strong> Jaivin Prajapati</span>
+      <span><strong>Updated</strong> 6 Apr 2026</span>
+      <span><strong>Status</strong> In Review</span>
     </div>
 
-    <!-- ── OVERVIEW ── -->
+    <!-- OVERVIEW -->
     <h2 id="overview">Overview</h2>
-    <p>When a customer churns and returns their Wiom router (Netbox), a security deposit refund is triggered automatically via the PUT (Pickup Ticket) system. However, there are cases where the device reaches Wiom or a confirmed location but the auto-trigger fails or is not applicable — leaving the customer owed a refund with no system path to process it.</p>
-    <p>This feature provides ops leads a controlled, audited interface inside Wiom Hub to manually process these refunds, and a browser-based captive portal for archived customers to submit their UPI details.</p>
+    <p style="font-size:13px; color:#444; margin-bottom:12px;">A controlled, audited interface for ops leads to manually process Netbox security deposit refunds when the auto-trigger fails or doesn't apply.</p>
+    <p style="font-size:13px; color:#444;">Two modules: <strong>Wiom Hub sub-tab</strong> (ops-facing) and <strong>Captive portal</strong> (customer-facing, browser-based, for archived customers with no app access).</p>
 
-    <div class="callout callout-pink">
-      <span class="callout-icon">💡</span>
-      <div class="callout-body">
-        <strong>Two modules in this feature</strong>
-        Module 1 — Wiom Hub sub-tab: ops-facing, gated by role, processes the refund.<br>
-        Module 2 — Captive portal: customer-facing, browser-based, collects UPI from archived customers who no longer have app access.
-      </div>
-    </div>
-
-    <!-- ── CONTEXT ── -->
-    <h2 id="context">Context & Problem</h2>
-    <h3>Why manual refunds are needed</h3>
-    <p>The automatic refund trigger fires when a PUT is resolved and the device confirmed returned. But it breaks or doesn't apply in the following situations:</p>
+    <!-- PROBLEM -->
+    <h2 id="problem">Problem</h2>
+    <h3>When auto-refund fails</h3>
     <ul>
-      <li>Device confirmed at partner office via signal/scanner — PUT resolved manually, refund not auto-triggered</li>
-      <li>Device at Wiom warehouse — PUT closed, but customer never submitted UPI and original payment source is unavailable</li>
-      <li>3PL confirms pickup (via API or email), Anurag verifies — refund not auto-initiated</li>
-      <li>PUT not yet created — customer is asked to start Netbox Return flow in app, but refund is still owed once device is recovered</li>
+      <li>Device confirmed at partner office via signal — PUT resolved manually, refund not triggered</li>
+      <li>Device at warehouse — PUT closed, but customer never submitted UPI</li>
+      <li>3PL confirms pickup, Anurag verifies — refund not auto-initiated</li>
+    </ul>
+    <h3>No UPI problem</h3>
+    <ul>
+      <li>Customer never submitted UPI in the Wiom app</li>
+      <li>Once archived, app is locked — no channel to collect UPI</li>
+      <li>Device is with Wiom, refund is owed, but nowhere to send it</li>
     </ul>
 
-    <h3>No-UPI problem</h3>
-    <p>A significant subset of customers never set up UPI in the Wiom app. Once the customer is archived (post-churn), the app is locked and they have no channel to submit UPI. This blocks the refund entirely — we have the device, we owe the money, but nowhere to send it.</p>
-
-    <!-- ── USERS ── -->
-    <h2 id="users">Users</h2>
-    <table>
-      <tr><th>User</th><th>Where</th><th>What they do</th></tr>
-      <tr><td><strong>Ops Lead</strong></td><td>Wiom Hub</td><td>Reviews case, enters remarks, uploads proof, triggers refund or sends WA link</td></tr>
-      <tr><td><strong>CS Agent</strong></td><td>Wiom Hub (read)</td><td>Surfaces refund need during customer call; opens the sub-tab to check status</td></tr>
-      <tr><td><strong>Customer (archived)</strong></td><td>Captive portal (browser)</td><td>Receives WA link, verifies OTP, enters UPI, confirms refund</td></tr>
-    </table>
-
-    <!-- ── SCOPE ── -->
+    <!-- SCOPE -->
     <h2 id="scope">Scope — V1</h2>
-    <div class="tag-row">
-      <span class="tag">Manual refund via UPI on file</span>
-      <span class="tag">Manual refund to original payment source</span>
-      <span class="tag">WA link + captive portal for archived customer UPI</span>
-      <span class="tag">Daily limit guardrail</span>
-      <span class="tag">Per-customer refund count = 1 rule</span>
-      <span class="tag">Role-gated access</span>
-    </div>
-    <div class="callout callout-warn">
-      <span class="callout-icon">⚠</span>
-      <div class="callout-body">
-        <strong>Out of scope (V1)</strong>
-        Active customer app-polling path (guide customer to submit UPI in app while on call) is out of scope for V1 — covered in a separate ticket. V1 only handles archived customers via WhatsApp link.
-      </div>
-    </div>
+    <ul>
+      <li>Manual refund when customer has submitted UPI</li>
+      <li>Manual refund to original payment source (Juspay)</li>
+      <li>WhatsApp link + captive portal for archived customers to submit UPI</li>
+      <li>Daily limit guardrail + per-customer refund cap</li>
+      <li>Role-gated access</li>
+    </ul>
+    <div class="callout callout-warn">Out of scope V1: active customer UPI submission path (guide customer via app while on call) — separate ticket.</div>
 
     <hr>
 
-    <!-- ── MODULE 1: HUB ── -->
-    <h2 id="hub">Module 1 — Wiom Hub Sub-tab</h2>
+    <!-- HUB -->
+    <h2 id="hub">Wiom Hub Sub-tab</h2>
+    <p style="font-size:13px; color:#444; margin-bottom:4px;"><strong>Entry:</strong> User Search → Customers / Archived Customers → Customer Details → <em>Netbox Security Refund</em> tab</p>
 
-    <h3 id="hub-entry">Entry Points</h3>
-    <ul>
-      <li><strong>Active customer:</strong> User Search → Customers → search by mobile → Customer Details → <em>Netbox Security Refund</em> tab</li>
-      <li><strong>Archived customer:</strong> User Search → Archived Customers → search by mobile → Customer Details → <em>Netbox Security Refund</em> tab</li>
-    </ul>
-    <p>The tab is always visible in both contexts. What renders inside changes based on customer status and refund eligibility.</p>
-
-    <h3 id="hub-guards">Guard Conditions (checked on tab load)</h3>
-    <p>Before any refund path is shown, two guards are evaluated in order:</p>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <span class="path-badge path-guard">Guard 1</span>
-        <span class="screen-name">Daily limit reached</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>A global daily cap exists on both <strong>number of transactions</strong> and <strong>total Rs amount</strong> — whichever hits first blocks the feature for the rest of the day</li>
-          <li>When triggered: show error alert only. No refund CTA. No other UI.</li>
-          <li>Resets at midnight. Ops manager is notified automatically when limit is hit.</li>
-          <li>Limit values: <strong>TBD</strong> (open item)</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <span class="path-badge path-guard">Guard 2</span>
-        <span class="screen-name">Refund already processed</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Per-customer refund count is capped at 1 — whether triggered by the system (auto) or manually via this portal</li>
-          <li>When triggered: show info alert + read-only refund details card (transaction ID, amount, method, refunded to, status, processed at)</li>
-          <li>No CTA. No further refund possible.</li>
-        </ul>
-      </div>
-    </div>
+    <h3 id="hub-guards">Guards (checked on load)</h3>
+    <table>
+      <tr><th>Guard</th><th>Condition</th><th>What shows</th></tr>
+      <tr><td>Daily limit</td><td>Global # transactions or total Rs cap hit</td><td>Error alert only. No CTA. Resets midnight. Ops manager notified.</td></tr>
+      <tr><td>Already refunded</td><td>Refund count = 1 for this customer (system or manual)</td><td>Info alert + read-only refund details. No CTA.</td></tr>
+    </table>
 
     <h3 id="hub-paths">Refund Paths</h3>
-    <p>If both guards pass, the system determines the refund path based on UPI and payment source availability.</p>
-
     <table>
-      <tr><th>Path</th><th>Condition</th><th>Action</th></tr>
-      <tr>
-        <td><span class="path-badge path-a">Path A</span></td>
-        <td>UPI on file for this customer</td>
-        <td>Show UPI ID, ops verbally confirms with customer, Process Refund CTA</td>
-      </tr>
-      <tr>
-        <td><span class="path-badge path-b1">Path B1</span></td>
-        <td>No UPI, original payment source available</td>
-        <td>Show masked source + ETA, ops reads to customer, Refund to Source CTA</td>
-      </tr>
-      <tr>
-        <td><span class="path-badge path-b2">Path B2</span></td>
-        <td>No UPI, no payment source</td>
-        <td>Send refund link via WhatsApp — customer submits UPI via captive portal</td>
-      </tr>
+      <tr><th>Scenario</th><th>What ops sees</th><th>Action</th></tr>
+      <tr><td>Customer submitted UPI</td><td>UPI shown as chip</td><td>Verbally confirm with customer → Process Refund</td></tr>
+      <tr><td>No UPI, payment source available</td><td>"Original payment source" (no instrument details visible)</td><td>Refund to source — or — Send WhatsApp link</td></tr>
+      <tr><td>No UPI, no source (expired/missing)</td><td>Source option disabled</td><td>Send WhatsApp link only</td></tr>
     </table>
-
-    <div class="callout callout-info">
-      <span class="callout-icon">ℹ</span>
-      <div class="callout-body">
-        <strong>Path B1 + B2 shown together when source available</strong>
-        When the original payment source exists, both options are shown — Refund to Source (Option A) and Send Refund Link (Option B). Option A is the preferred path; Option B is a fallback if the customer insists on receiving to UPI.
-      </div>
-    </div>
+    <div class="callout callout-info">We use Juspay for checkout and don't store instrument details. Ops cannot see card/bank name — only "original payment source". If customer asks, CS informs them the refund goes to the account they paid from. Suggest UPI submission if they want visibility.</div>
 
     <h3 id="hub-checklist">Pre-Action Checklist</h3>
-    <p>Before any refund CTA is enabled, the ops lead must complete a two-item checklist:</p>
-    <ol>
-      <li><strong>Remarks</strong> — reason for manual refund (free text, minimum 5 characters). Required for audit trail.</li>
-      <li><strong>Screenshot proof</strong> — upload a screenshot confirming the device location / CS conversation. Required before any action.</li>
-    </ol>
-    <p>Both checklist items are shown with visual checkmarks (grey → green on completion). All action CTAs are <code>disabled</code> until both items are complete.</p>
-    <p>The submitted remarks and proof filename are carried forward and shown on the processing/success screen as a read-only Submission card.</p>
+    <ul>
+      <li>All CTAs are disabled until both items are completed</li>
+      <li><strong>Remarks</strong> — reason for manual refund (min 5 chars)</li>
+      <li><strong>Screenshot proof</strong> — upload confirming device location / CS conversation</li>
+      <li>Both items shown with visual checkmarks (grey → green on completion)</li>
+      <li>Submitted remarks and proof filename carried forward to success screen</li>
+    </ul>
 
-    <h3 id="hub-screens">Screens — Full Breakdown</h3>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">1</div>
-        <span class="screen-name">Daily limit reached</span>
-        <span class="screen-tag path-guard">Guard</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Error alert: "Daily limit reached. This feature resets at midnight. Ops manager has been notified."</li>
-          <li>No other UI rendered.</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">2</div>
-        <span class="screen-name">Already refunded</span>
-        <span class="screen-tag path-guard">Guard</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Info alert: "Refund already processed. No further refund can be issued."</li>
-          <li>Refund details card: Transaction ID, Amount, Method, Refunded to, Status, Processed at</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">3</div>
-        <span class="screen-name">UPI on file</span>
-        <span class="screen-tag path-a">Path A</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Checklist card (remarks + screenshot) — CTAs disabled until complete</li>
-          <li>UPI section: show UPI ID as a chip, prompt to verbally confirm with customer before proceeding</li>
-          <li>CTA: <strong>Process Refund</strong> — opens inline confirm box showing UPI, two buttons: Confirm & Initiate / Cancel</li>
-          <li>On confirm → transitions to Processing/Success screen</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">4</div>
-        <span class="screen-name">No UPI — source available</span>
-        <span class="screen-tag path-b1">Path B1 + B2</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Checklist card (remarks + screenshot) — CTAs disabled until complete</li>
-          <li><strong>Option A — Refund to original source:</strong> show masked source badge (e.g. HDFC card ••••4242), ETA (5–7 business days for card, same day–3 days for UPI). CTA: Refund to Source → confirm box → Confirm & Initiate</li>
-          <li><strong>Option B — Send refund link via WhatsApp:</strong> CTA: Send Refund Link → confirm box showing customer mobile number → Confirm & Send → transitions to WA link sent screen</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">5</div>
-        <span class="screen-name">No UPI — no source</span>
-        <span class="screen-tag path-b2">Path B2 only</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Checklist card (remarks + screenshot) — CTA disabled until complete</li>
-          <li>Option A (Refund to Source) rendered as disabled block with message: "Original payment source could not be found."</li>
-          <li>Option B (Send Refund Link) is the only active CTA → confirm box → Confirm & Send → WA link sent screen</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">6</div>
-        <span class="screen-name">WA link sent</span>
-        <span class="screen-tag path-b2">Path B2</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Submission card (read-only): remarks + proof filename</li>
-          <li>Status block: ✓ Link sent — Sent at timestamp, Expires at (30 minutes from send), Initiated by (agent name + ID)</li>
-          <li>CTA: <strong>Regenerate Link</strong> — invalidates previous link, sends new one, updates sent/expiry times</li>
-          <li>This screen persists until the customer submits UPI via captive portal and refund is triggered</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header">
-        <div class="screen-num">7</div>
-        <span class="screen-name">Processing / Success</span>
-        <span class="screen-tag" style="background:#e8f5e9;color:#2e7d32;">All paths</span>
-      </div>
-      <div class="screen-body">
-        <ul>
-          <li>Success alert: "Refund of ₹X has been initiated. Customer will receive a WhatsApp confirmation. ETA: same day–3 days."</li>
-          <li>Submission card (read-only): remarks + proof filename</li>
-          <li>Refund details card: Transaction ID, Amount, Method, Refunded to (UPI shown prominently), Status (Processing chip), Initiated by (agent name + ID), Initiated at (timestamp)</li>
-          <li>Info callout: "Let the customer know their refund is being sent to [UPI]. They'll receive a WhatsApp confirmation shortly."</li>
-        </ul>
-      </div>
-    </div>
+    <h3 id="hub-screens">All Screens</h3>
+    <table>
+      <tr><th>#</th><th>Screen</th><th>Key elements</th></tr>
+      <tr><td>1</td><td>Daily limit reached</td><td>Error alert only</td></tr>
+      <tr><td>2</td><td>Already refunded</td><td>Info alert + txn ID, amount, method, refunded to, status, processed at</td></tr>
+      <tr><td>3</td><td>Customer submitted UPI</td><td>Checklist → UPI chip → Process Refund → confirm box → success</td></tr>
+      <tr><td>4</td><td>No UPI — source available</td><td>Checklist → Option A (refund to source) + Option B (WA link)</td></tr>
+      <tr><td>5</td><td>No UPI — no source</td><td>Checklist → Option A disabled → Option B (WA link) only</td></tr>
+      <tr><td>6</td><td>WA link sent</td><td>Submission card (remarks + proof) · sent time · expiry (30 min) · initiated by · Regenerate Link</td></tr>
+      <tr><td>7</td><td>Processing / Success</td><td>Submission card · txn details · UPI shown (CS to inform customer) · initiated by · timestamp</td></tr>
+    </table>
 
     <hr>
 
-    <!-- ── MODULE 2: CAPTIVE PORTAL ── -->
-    <h2 id="captive">Module 2 — Captive Portal (Archived Customer UPI)</h2>
-    <p>A lightweight browser-based flow that allows an archived customer to verify their identity and submit a UPI ID to receive their refund — without needing access to the Wiom app.</p>
+    <!-- CAPTIVE PORTAL -->
+    <h2 id="captive">Captive Portal</h2>
+    <p style="font-size:13px; color:#444; margin-bottom:12px;">Browser-based flow for archived customers to verify identity and submit UPI. No app required.</p>
+    <div class="callout callout-warn">Portal ownership (existing vs new) pending alignment with Rajnikant. OTP infra exists and will be reused.</div>
 
-    <div class="callout callout-info">
-      <span class="callout-icon">ℹ</span>
-      <div class="callout-body">
-        <strong>Portal ownership — open item</strong>
-        Whether this is built inside the existing captive portal or as a new standalone page is pending Cx team decision. OTP infrastructure exists and will be reused.
-      </div>
-    </div>
-
-    <h3 id="captive-flow">Full Flow</h3>
-    <div class="flow-steps">
-      <div class="flow-step">
-        <div class="flow-dot pink">1</div>
-        <div class="flow-content">
-          <div class="flow-label">Ops sends link from Hub</div>
-          <div class="flow-desc">Clicks "Send Refund Link" → confirms mobile number → link dispatched via WhatsApp (Gupshup)</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-dot pink">2</div>
-        <div class="flow-content">
-          <div class="flow-label">Customer opens link in browser</div>
-          <div class="flow-desc">Link valid for 30 minutes. Landing screen shows customer name and refund amount.</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-dot pink">3</div>
-        <div class="flow-content">
-          <div class="flow-label">OTP verification</div>
-          <div class="flow-desc">OTP sent to registered mobile. Customer enters 6-digit OTP. Resend available.</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-dot pink">4</div>
-        <div class="flow-content">
-          <div class="flow-label">UPI entry</div>
-          <div class="flow-desc">Customer enters UPI ID. System validates format and resolves bank name (via Razorpay / UPI lookup).</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-dot pink">5</div>
-        <div class="flow-content">
-          <div class="flow-label">Confirmation screen</div>
-          <div class="flow-desc">Shows: UPI ID, resolved bank name, amount, ETA. Customer confirms. Option to edit UPI if wrong.</div>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-dot pink">6</div>
-        <div class="flow-content">
-          <div class="flow-label">Refund auto-initiates</div>
-          <div class="flow-desc">Customer sees success screen with txn reference. Page becomes inactive. WhatsApp confirmations sent: "Initiated" + "Completed".</div>
-        </div>
-      </div>
-    </div>
+    <h3 id="captive-flow">Flow</h3>
+    <ol>
+      <li>Ops sends link from Hub → WhatsApp delivered via Clevertap event (dynamic portal link as property)</li>
+      <li>Customer opens link in browser → sees name + refund amount</li>
+      <li>OTP verification (delivery channel — SMS or WhatsApp — confirm with Akash)</li>
+      <li>Customer enters UPI → system resolves bank name</li>
+      <li>Confirmation screen → customer confirms → refund initiates</li>
+      <li>Success screen + WhatsApp confirmation sent</li>
+    </ol>
 
     <h3 id="captive-screens">Screens</h3>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">1</div><span class="screen-name">Landing</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>Wiom branding header</li>
-          <li>"Claim your refund" heading, greeting with customer first name</li>
-          <li>Refund amount badge (prominent)</li>
-          <li>Registered mobile shown as read-only field with hint: "OTP will be sent to this number"</li>
-          <li>CTA: Send OTP</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">2</div><span class="screen-name">OTP</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>6-digit OTP input (large, center-aligned)</li>
-          <li>Masked mobile number shown in subtext</li>
-          <li>OTP valid for 10 minutes</li>
-          <li>Resend OTP link</li>
-          <li>CTA: Verify</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">3</div><span class="screen-name">UPI Entry</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>UPI ID text input with format hint (name@okaxis, name@ybl, name@paytm)</li>
-          <li>Warning: "Make sure it's correct — this can't be changed later"</li>
-          <li>CTA: Continue → triggers UPI resolution (bank name lookup)</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">3E</div><span class="screen-name">Invalid UPI (error state)</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>Same screen as UPI Entry but with inline error alert: "UPI not found — we couldn't verify this ID"</li>
-          <li>Input field border turns red</li>
-          <li>Customer can correct and retry</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">4</div><span class="screen-name">UPI Confirm</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>Confirm card: UPI ID, resolved bank name, customer name</li>
-          <li>Summary rows: Amount, ETA (same day–3 business days), registered mobile</li>
-          <li>CTA: Confirm & Claim Refund</li>
-          <li>Secondary: Edit UPI (goes back to UPI Entry)</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">5</div><span class="screen-name">Success</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>Success alert: "Refund initiated!"</li>
-          <li>Summary: Amount, UPI refunded to, ETA, Transaction reference</li>
-          <li>Footer: "This page is no longer active. You may close this tab."</li>
-          <li>WhatsApp confirmation sent to customer automatically</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="screen-card">
-      <div class="screen-card-header"><div class="screen-num">6</div><span class="screen-name">Expired link</span></div>
-      <div class="screen-body">
-        <ul>
-          <li>Link icon (greyed out), "Link expired" heading</li>
-          <li>Message: "This refund link has expired. Call Wiom support and we'll send you a new one."</li>
-          <li>CTA: Call Wiom Support (tel: link)</li>
-          <li>On call-back: ops regenerates link from Hub → new WhatsApp message sent</li>
-        </ul>
-      </div>
-    </div>
+    <table>
+      <tr><th>#</th><th>Screen</th><th>Key elements</th></tr>
+      <tr><td>1</td><td>Landing</td><td>Customer name, refund amount badge, registered mobile (read-only), Send OTP CTA</td></tr>
+      <tr><td>2</td><td>OTP</td><td>6-digit input, resend link</td></tr>
+      <tr><td>3</td><td>UPI entry</td><td>UPI input with format hint, warning: can't be changed later</td></tr>
+      <tr><td>3E</td><td>Invalid UPI</td><td>Inline error, retry</td></tr>
+      <tr><td>4</td><td>Confirm</td><td>UPI + bank name + amount + ETA (3–5 days) → Confirm & Claim / Edit UPI</td></tr>
+      <tr><td>5</td><td>Success</td><td>Amount, UPI, txn reference, "page no longer active"</td></tr>
+      <tr><td>6</td><td>Expired link</td><td>Call support CTA. Ops regenerates from Hub.</td></tr>
+    </table>
 
     <hr>
 
-    <!-- ── BUSINESS RULES ── -->
+    <!-- BUSINESS RULES -->
     <h2 id="rules">Business Rules</h2>
     <table>
       <tr><th>Rule</th><th>Detail</th></tr>
-      <tr><td>Refund amount</td><td>Security deposit amount — <strong>TBD, confirm with Bhavin</strong></td></tr>
-      <tr><td>Per-customer refund cap</td><td>Exactly 1 refund per customer, system-wide (system + manual combined). Once processed, all future attempts are blocked.</td></tr>
-      <tr><td>Daily global limit</td><td># of transactions OR total Rs amount — whichever hits first. Values TBD. Resets midnight. Ops manager alerted.</td></tr>
-      <tr><td>WA link TTL</td><td>30 minutes from send. Ops can regenerate from Hub; old link immediately invalidated.</td></tr>
-      <tr><td>UPI per link</td><td>Each link allows exactly 1 UPI submission. Once submitted and refund triggered, link is consumed.</td></tr>
-      <tr><td>Expired link resolution</td><td>Customer calls back → ops regenerates link → new WhatsApp sent. No auto-expiry notification to customer.</td></tr>
-      <tr><td>Proof requirement</td><td>Screenshot upload is mandatory before any refund CTA is enabled. Cannot be bypassed.</td></tr>
-      <tr><td>Remarks requirement</td><td>Free text remarks mandatory (≥5 chars). Stored as part of audit record.</td></tr>
+      <tr><td>Refund amount</td><td>TBD — confirm with Bhavin. PayG with no PUT: Bhavin to set amount. Others: amount always available in system.</td></tr>
+      <tr><td>Per-customer cap</td><td>1 refund per customer (system + manual combined). Applies on success only — failed refunds don't count.</td></tr>
+      <tr><td>Daily limit</td><td># transactions AND total Rs — whichever hits first. Values TBD. Resets midnight.</td></tr>
+      <tr><td>WA link TTL</td><td>30 minutes. Ops regenerates from Hub; old link immediately invalidated.</td></tr>
+      <tr><td>Juspay validity</td><td>~6 months from original payment (varies by PG type). Expired = source unavailable → WA link path.</td></tr>
+      <tr><td>ETA</td><td>3–5 business days (blanket, all payment types)</td></tr>
+      <tr><td>Proof + remarks</td><td>Both mandatory before any CTA is enabled. Stored in audit log.</td></tr>
     </table>
 
-    <!-- ── ACCESS CONTROL ── -->
+    <!-- ACCESS -->
     <h2 id="access">Access Control</h2>
-    <p>The sub-tab is visible to all Hub users but gated via a permission constant:</p>
-    <p><code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code></p>
-    <p>Only users with this permission can take any action. Users without it see the tab but all CTAs are disabled. Exact roles to be granted access: <strong>TBD</strong> (open item — ops leads and above).</p>
+    <p style="font-size:13px; color:#444;">Gated by permission: <code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code>. Exact roles TBD — ops leads and above.</p>
 
-    <!-- ── NOTIFICATIONS ── -->
+    <!-- NOTIFICATIONS -->
     <h2 id="notifications">Notifications</h2>
     <table>
-      <tr><th>Trigger</th><th>To</th><th>Channel</th><th>Message</th></tr>
-      <tr><td>Refund initiated (UPI / source)</td><td>Customer</td><td>WhatsApp</td><td>"Your security deposit refund of ₹X has been initiated. ETA: X days."</td></tr>
-      <tr><td>Refund completed</td><td>Customer</td><td>WhatsApp</td><td>"Your refund of ₹X has been credited to [UPI / card]."</td></tr>
-      <tr><td>Daily limit hit</td><td>Ops manager</td><td>TBD (Slack / email)</td><td>Alert with count and total amount processed that day</td></tr>
-      <tr><td>WA link sent</td><td>Customer</td><td>WhatsApp</td><td>Refund link message with CTA. Sent via Gupshup.</td></tr>
+      <tr><th>Trigger</th><th>To</th><th>Channel</th></tr>
+      <tr><td>Refund initiated</td><td>Customer</td><td>WhatsApp</td></tr>
+      <tr><td>Refund completed</td><td>Customer</td><td>WhatsApp</td></tr>
+      <tr><td>Daily limit hit</td><td>Ops manager</td><td>TBD</td></tr>
+      <tr><td>WA link sent</td><td>Customer</td><td>WhatsApp via Clevertap</td></tr>
+      <tr><td>Refund failed</td><td>Ops</td><td>TBD — Slack / Hub alert</td></tr>
     </table>
 
-    <!-- ── OPEN ITEMS ── -->
+    <!-- OPEN ITEMS -->
     <h2 id="open">Open Items</h2>
 
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Refund amount — what is the security deposit value?</div>
-        <div class="open-note">Confirm with Bhavin. May vary by plan or device type.</div>
+      <div>
+        <div class="open-q">Refund amount — where is it stored per customer?</div>
+        <div class="open-note">Bhavin to confirm source + define PayG default</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Daily limit thresholds — how many transactions and what Rs cap?</div>
-        <div class="open-note">Needs ops team input. Both # and Rs amount caps needed.</div>
+      <div>
+        <div class="open-q">Daily limit thresholds — # transactions and Rs cap</div>
+        <div class="open-note">Ops team to define</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Which roles get CUSTOMER_MODULE_NETBOX_SECURITY_REFUND permission?</div>
-        <div class="open-note">Ops leads and above assumed — confirm exact roles with Cx team.</div>
+      <div>
+        <div class="open-q">Which roles get access?</div>
+        <div class="open-note">Ops leads and above — confirm exact roles</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Razorpay refund ETAs by payment type?</div>
-        <div class="open-note">UPI: same day–3 days. Card: 5–7 days assumed. Confirm with Razorpay documentation.</div>
+      <div>
+        <div class="open-q">Juspay validity check — which field? Installation date or Juspay timestamp?</div>
+        <div class="open-note">Cx team to decide. Tech to confirm what's available in DB.</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Gupshup WhatsApp integration — already wired up in customer team?</div>
-        <div class="open-note">Wiom has Gupshup tie-up. Confirm if customer team has it integrated or needs new setup.</div>
+      <div>
+        <div class="open-q">OTP delivery — SMS or WhatsApp?</div>
+        <div class="open-note">Confirm with Akash</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Captive portal — build inside existing portal or new standalone page?</div>
-        <div class="open-note">Cx team to decide. OTP infra exists and will be reused regardless.</div>
+      <div>
+        <div class="open-q">Captive portal — existing or new?</div>
+        <div class="open-note">Align with Rajnikant before build</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">OTP infra — what does Cx team need from Jaivin's side?</div>
-        <div class="open-note">Infra exists. Cx team to specify requirements (API contract, rate limits, retry logic).</div>
+      <div>
+        <div class="open-q">Gupshup / Clevertap WhatsApp — already integrated in customer team?</div>
+        <div class="open-note">Akash/Shail confirmed possible. Jaivin to create Clevertap campaign.</div>
       </div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div class="open-body">
-        <div class="open-q">Audit trail — backend DB logging spec</div>
-        <div class="open-note">Every action needs to be logged: agent ID, timestamp, customer mobile, action, outcome. Separate ticket to be raised.</div>
+      <div>
+        <div class="open-q">Refund failure notification channel</div>
+        <div class="open-note">Slack / Hub alert / email — TBD</div>
+      </div>
+    </div>
+    <div class="open-item">
+      <div class="open-dot"></div>
+      <div>
+        <div class="open-q">How many customers have called for refund today?</div>
+        <div class="open-note">Check with Deepakshi — not yet done</div>
       </div>
     </div>
 
-    <!-- ── LINKS ── -->
-    <h2 id="links">Links</h2>
+    <!-- TICKETS & LINKS -->
+    <h2 id="tickets">Tickets & Links</h2>
+    <table>
+      <tr><th>Ticket</th><th>Title</th></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1080">CX-1080</a></td><td>Wiom Hub — Manual Refund Sub-tab (Frontend)</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1081">CX-1081</a></td><td>Archived Customer UPI — WhatsApp Link + Captive Portal</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1082">CX-1082</a></td><td>Refund to Original Payment Source (Juspay)</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1083">CX-1083</a></td><td>Determine Refund Amount Per Customer</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1084">CX-1084</a></td><td>Payment Status Tracking and Failure Reset</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1085">CX-1085</a></td><td>Audit Trail — Backend Logging</td></tr>
+    </table>
     <table>
       <tr><th>Resource</th><th>Link</th></tr>
       <tr><td>Hub UI Prototype</td><td><a href="https://jaivinprajapati.github.io/wiom-refund-flows/tech/netbox-refund-design.html">netbox-refund-design.html</a></td></tr>
       <tr><td>Captive Portal Prototype</td><td><a href="https://jaivinprajapati.github.io/wiom-refund-flows/tech/captive-portal-flow.html">captive-portal-flow.html</a></td></tr>
-      <tr><td>CS Diagnostic Flow (ops doc)</td><td><a href="https://jaivinprajapati.github.io/wiom-refund-flows/cx-calls-wiom-refund.html">cx-calls-wiom-refund.html</a></td></tr>
-      <tr><td>Jira — Hub Frontend</td><td><a href="https://wiom.atlassian.net/browse/CX-1080">CX-1080</a></td></tr>
-      <tr><td>Jira — Archived UPI + Captive Portal</td><td><a href="https://wiom.atlassian.net/browse/CX-1081">CX-1081</a></td></tr>
+      <tr><td>CS Diagnostic Flow</td><td><a href="https://jaivinprajapati.github.io/wiom-refund-flows/cx-calls-wiom-refund.html">cx-calls-wiom-refund.html</a></td></tr>
     </table>
 
-  </div><!-- /doc -->
-</div><!-- /layout -->
+  </div>
+</div>
 </body>
 </html>
