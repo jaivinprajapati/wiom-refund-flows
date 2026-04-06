@@ -660,11 +660,11 @@
             <div class="card-title">Submission</div>
             <div class="info-row" style="margin-bottom:10px;">
               <span class="info-label">Remarks</span>
-              <span class="info-value" style="font-weight:400; color:#424242;">Device at warehouse. No UPI. Sending WhatsApp refund link to customer.</span>
+              <span class="info-value" id="wasent-sub-remarks" style="font-weight:400; color:#424242;">—</span>
             </div>
             <div class="info-row">
               <span class="info-label">Proof</span>
-              <span class="info-value" style="display:flex; align-items:center; gap:6px;"><span class="material-icons" style="font-size:16px; color:#2e7d32;">attach_file</span> screenshot_proof.jpg</span>
+              <span class="info-value" id="wasent-sub-proof" style="display:flex; align-items:center; gap:6px;">—</span>
             </div>
           </div>
 
@@ -703,11 +703,11 @@
             <div class="card-title">Submission</div>
             <div class="info-row" style="margin-bottom:10px;">
               <span class="info-label">Remarks</span>
-              <span class="info-value" style="font-weight:400; color:#424242;">CS confirmed device at partner office. PUT closed as resolved. Refund not auto-triggered.</span>
+              <span class="info-value" id="success-sub-remarks" style="font-weight:400; color:#424242;">—</span>
             </div>
             <div class="info-row">
               <span class="info-label">Proof</span>
-              <span class="info-value" style="display:flex; align-items:center; gap:6px;"><span class="material-icons" style="font-size:16px; color:#2e7d32;">attach_file</span> screenshot_proof.jpg</span>
+              <span class="info-value" id="success-sub-proof" style="display:flex; align-items:center; gap:6px;">—</span>
             </div>
           </div>
 
@@ -767,12 +767,43 @@
     }
   }
 
+  // track which action screen the user came from
+  let lastActionScreen = null;
+
   // initialise checklist for upi screen (pre-filled remarks → check1 starts green)
   window.addEventListener('DOMContentLoaded', () => {
     updateChecklist('upi');
   });
 
+  function captureSubmission(sourceScreen) {
+    const remarksEl = document.getElementById(sourceScreen + '-remarks');
+    const fileInputs = document.querySelectorAll('#screen-' + sourceScreen + ' input[type=file]');
+    const remarks = remarksEl ? remarksEl.value.trim() : '';
+    const file = fileInputs.length > 0 && fileInputs[0].files.length > 0 ? fileInputs[0].files[0].name : null;
+    return { remarks, file };
+  }
+
+  function populateSubmission(targetPrefix, remarks, file) {
+    const remarksEl = document.getElementById(targetPrefix + '-sub-remarks');
+    const proofEl = document.getElementById(targetPrefix + '-sub-proof');
+    if (remarksEl) remarksEl.textContent = remarks || '—';
+    if (proofEl) {
+      if (file) {
+        proofEl.innerHTML = '<span class="material-icons" style="font-size:16px;color:#2e7d32;">attach_file</span> ' + file;
+      } else {
+        proofEl.textContent = '—';
+      }
+    }
+  }
+
   function setState(s) {
+    // capture submission before leaving the active action screen
+    if (['success','wasent'].includes(s) && lastActionScreen) {
+      const { remarks, file } = captureSubmission(lastActionScreen);
+      const prefix = s === 'success' ? 'success' : 'wasent';
+      populateSubmission(prefix, remarks, file);
+    }
+
     states.forEach(id => {
       const el = document.getElementById('screen-' + id);
       if (el) el.classList.remove('active');
@@ -790,6 +821,9 @@
 
     // hide all confirm boxes on state switch
     document.querySelectorAll('.confirm-box').forEach(el => el.style.display = 'none');
+
+    // track which action screen we're on
+    if (['upi','source','nosource'].includes(s)) lastActionScreen = s;
   }
 
   function showConfirmUPI() {
