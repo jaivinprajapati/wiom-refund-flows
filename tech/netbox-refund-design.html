@@ -533,8 +533,6 @@
                 <select class="remarks-select" id="upi-reason" onchange="updateChecklist('upi')">
                   <option value="">— Select a reason —</option>
                   <option value="put_resolved_recovered">PUT resolved — router recovered</option>
-                  <option value="put_expired">PUT expired</option>
-                  <option value="put_not_created">PUT not yet created</option>
                   <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
                   <option value="device_partner_idle">Device at partner office (IDLE status)</option>
                   <option value="device_another_customer">Device at another customer</option>
@@ -591,8 +589,6 @@
                 <select class="remarks-select" id="source-reason" onchange="updateChecklist('source')">
                   <option value="">— Select a reason —</option>
                   <option value="put_resolved_recovered">PUT resolved — router recovered</option>
-                  <option value="put_expired">PUT expired</option>
-                  <option value="put_not_created">PUT not yet created</option>
                   <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
                   <option value="device_partner_idle">Device at partner office (IDLE status)</option>
                   <option value="device_another_customer">Device at another customer</option>
@@ -664,8 +660,6 @@
                 <select class="remarks-select" id="nosource-reason" onchange="updateChecklist('nosource')">
                   <option value="">— Select a reason —</option>
                   <option value="put_resolved_recovered">PUT resolved — router recovered</option>
-                  <option value="put_expired">PUT expired</option>
-                  <option value="put_not_created">PUT not yet created</option>
                   <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
                   <option value="device_partner_idle">Device at partner office (IDLE status)</option>
                   <option value="device_another_customer">Device at another customer</option>
@@ -834,8 +828,6 @@
   const reasonLabels = {
     'put_resolved_recovered': 'PUT resolved — router recovered',
     'put_resolved_other': 'PUT resolved — other reason',
-    'put_expired': 'PUT expired',
-    'put_not_created': 'PUT not yet created',
     'device_warehouse': 'Device confirmed at Wiom warehouse',
     'device_partner_idle': 'Device at partner office (IDLE)',
     'device_another_customer': 'Device at another customer',
