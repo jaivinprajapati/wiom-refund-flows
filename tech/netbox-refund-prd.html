@@ -610,15 +610,7 @@
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div><div class="open-q">Daily limit thresholds — # transactions and Rs cap</div><div class="open-note">Ops team to define</div></div>
-    </div>
-    <div class="open-item">
-      <div class="open-dot"></div>
-      <div><div class="open-q">Which roles get CUSTOMER_MODULE_NETBOX_SECURITY_REFUND permission?</div><div class="open-note">Ops leads and above — confirm exact roles</div></div>
-    </div>
-    <div class="open-item">
-      <div class="open-dot"></div>
-      <div><div class="open-q">Juspay validity check — installation date or Juspay timestamp?</div><div class="open-note">Cx team to decide. Tech to confirm what's available in DB.</div></div>
+      <div><div class="open-q">Juspay validity check — installation date or Juspay timestamp?</div><div class="open-note">Tech to confirm what's available in DB</div></div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
@@ -634,11 +626,19 @@
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div><div class="open-q">Refund failure notification channel</div><div class="open-note">Slack / Hub alert / email — TBD</div></div>
+      <div><div class="open-q">Daily limit breach alert — Jaivin (Product) to be notified</div><div class="open-note">Create a Hub/Slack alert when daily manual refund count limit is hit. Separate from refund failure handling.</div></div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div><div class="open-q">How many customers have called for a refund today?</div><div class="open-note">Check with Deepakshi — not yet done</div></div>
+      <div><div class="open-q">How many customers have called for a refund?</div><div class="open-note">Check with Deepakshi — not yet done. Needed for sizing.</div></div>
+    </div>
+    <div class="open-item">
+      <div class="open-dot"></div>
+      <div><div class="open-q">PUT status API — Partner App team to build (CX-1094)</div><div class="open-note">Required for diagnostic signals. Scope: customer mobile, ticket creation date, resolution date, status, resolution type. Filter: ticket created after customer's last recharge date.</div></div>
+    </div>
+    <div class="open-item">
+      <div class="open-dot"></div>
+      <div><div class="open-q">Global Scanner API — Partner App team to build (CX-1095)</div><div class="open-note">Required for diagnostic signals. Return last scan record for device: partner_id, scan date, photo. Filter: scanned after customer's last recharge date.</div></div>
     </div>
 
     <!-- TICKETS & LINKS -->
@@ -653,6 +653,8 @@
       <tr><td><a href="https://wiom.atlassian.net/browse/CX-1085">CX-1085</a></td><td>Audit Trail — Backend Logging</td></tr>
       <tr><td><a href="https://wiom.atlassian.net/browse/CX-1091">CX-1091</a></td><td>Guardrails — Daily Limit + Per-Customer Cap + Role Gating</td></tr>
       <tr><td><a href="https://wiom.atlassian.net/browse/CX-1092">CX-1092</a></td><td>Refund to Submitted UPI — Direct Processing Flow</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1094">CX-1094</a></td><td>Diagnostic Signals — PUT Status API for Wiom Hub (Partner App)</td></tr>
+      <tr><td><a href="https://wiom.atlassian.net/browse/CX-1095">CX-1095</a></td><td>Diagnostic Signals — Global Scanner API for Wiom Hub (Partner App)</td></tr>
     </table>
     <table>
       <tr><th>Resource</th><th>Link</th></tr>
