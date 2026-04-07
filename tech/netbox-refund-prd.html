@@ -93,6 +93,7 @@
     <a href="#rules">Business Rules</a>
     <a href="#access">Access</a>
     <a href="#notifications">Notifications</a>
+    <a href="#dependencies">Cross-Pod Dependencies</a>
     <a href="#open">Open Items</a>
     <a href="#tickets">Tickets & Links</a>
   </nav>
@@ -497,6 +498,108 @@
       <tr><td>Daily limit hit</td><td>Ops manager</td><td>TBD</td><td>Alert with count + total amount processed that day</td></tr>
       <tr><td>Refund failed</td><td>Ops</td><td>TBD — Slack / Hub alert</td><td>Failure alert; flow resets in Hub for retry</td></tr>
     </table>
+
+    <!-- CROSS-POD DEPENDENCIES -->
+    <h2 id="dependencies">Cross-Pod Dependencies</h2>
+    <p>Primary grooming: <strong>Customer Team</strong>. All items below need alignment before build starts.</p>
+
+    <h3>Customer Team</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>What's needed</th><th>Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Refund processing — Juspay payout</td>
+          <td>API to initiate UPI payout + poll status. Existing Juspay integration to be extended for manual flow.</td>
+          <td>Hub frontend, captive portal</td>
+        </tr>
+        <tr>
+          <td>UPI collection — active customers</td>
+          <td>In-app UPI submission (customer submits while on call with CS). Out of scope V1 — separate ticket.</td>
+          <td>Hub frontend</td>
+        </tr>
+        <tr>
+          <td>UPI collection — archived customers (captive portal BE)</td>
+          <td>Backend: generate signed WA link, validate OTP, store submitted UPI against <code>user_account_id</code>, mark link expired after 30 min.</td>
+          <td>Captive portal frontend (Rajnikant), Hub frontend (WA link trigger)</td>
+        </tr>
+        <tr>
+          <td>Captive portal OTP</td>
+          <td>OTP generation + delivery infra (SMS or WA — confirm channel with Akash). Already exists; delivery channel TBD.</td>
+          <td>Captive portal frontend</td>
+        </tr>
+        <tr>
+          <td>Guardrails</td>
+          <td>Daily cap counter (5 txns / ₹1,500 — configurable), per-customer cap keyed on <code>user_account_id</code>, reset at midnight IST, ops alert on breach.</td>
+          <td>Hub frontend</td>
+        </tr>
+        <tr>
+          <td>Audit trail storage</td>
+          <td>Log every refund attempt: agent ID, timestamp, reason, remarks, proof filename, refund method, amount, txn ID, status. Read API for Hub display.</td>
+          <td>Hub frontend, all flows</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Business Efficiency Team</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>What's needed</th><th>Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Wiom Hub — manual refund sub-tab (frontend)</td>
+          <td>React + MUI sub-tab in Customer Details. All states: guard screens, refund paths, checklist, processing, success. CX-1080.</td>
+          <td>CS agents</td>
+        </tr>
+        <tr>
+          <td>Wiom Hub — diagnostic signals view (frontend)</td>
+          <td>Separate view showing PUT status, device status, Global Scanner cards with eligible/action-needed banner.</td>
+          <td>CS agents</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Business Efficiency BE (Rajnikant)</h3>
+    <table>
+      <thead>
+        <tr><th>Item</th><th>What's needed</th><th>Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Captive portal frontend</td>
+          <td>Browser-based 7-screen portal: landing → OTP → UPI entry → confirm → success / expired / invalid. Prototype: <a href="https://jaivinprajapati.github.io/wiom-refund-flows/tech/captive-portal-flow.html" target="_blank">captive-portal-flow.html</a>. CX-1081.</td>
+          <td>Archived customers</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Diagnostic Signals — Data Dependencies</h3>
+    <table>
+      <thead>
+        <tr><th>Signal</th><th>Owner</th><th>What's needed</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PUT status</td>
+          <td>Partner App team</td>
+          <td>API to fetch current PUT status for a given <code>user_account_id</code> / mobile: not created / open / resolved (router_recovered or other) / expired.</td>
+        </tr>
+        <tr>
+          <td>Device status</td>
+          <td>BE team</td>
+          <td>Query <code>t_device</code> by device linked to customer — return status (IN_WAREHOUSE / IDLE / INSTALLED / LOST) + <code>user_account_id</code> if INSTALLED (to detect different-account case).</td>
+        </tr>
+        <tr>
+          <td>Global Scanner</td>
+          <td>Partner App team</td>
+          <td>API to fetch last scanner record for a device: partner_id, scan date, photo. Hub-only — not exposed to partner app.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr>
 
     <!-- OPEN ITEMS -->
     <h2 id="open">Open Items</h2>
