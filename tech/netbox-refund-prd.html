@@ -75,6 +75,10 @@
     <a href="#users">Users</a>
     <a href="#scope">Scope</a>
     <hr>
+    <a href="#diagnostic">Diagnostic Signals</a>
+    <a href="#diag-signals" class="l2">Signal cards</a>
+    <a href="#diag-scenarios" class="l2">Eligible vs pending</a>
+    <hr>
     <a href="#hub">Wiom Hub Sub-tab</a>
     <a href="#hub-entry" class="l2">Entry points</a>
     <a href="#hub-guards" class="l2">Guards</a>
@@ -145,6 +149,100 @@
 
     <hr>
 
+    <!-- DIAGNOSTIC -->
+    <h2 id="diagnostic">Diagnostic Signals</h2>
+    <p>Before initiating a refund, CS uses a dedicated diagnostic view in Wiom Hub to assess whether device return is confirmed. This view is <strong>separate</strong> from the refund processing tab — it is read-only and helps the agent decide which refund reason to select.</p>
+    <p>Prototype: <a href="https://jaivinprajapati.github.io/wiom-refund-flows/tech/diagnostic-signals.html" target="_blank">diagnostic-signals.html</a></p>
+
+    <h3 id="diag-signals">Signal Cards</h3>
+    <p>Three signal cards are shown per customer:</p>
+
+    <table>
+      <thead>
+        <tr><th>Signal</th><th>Source</th><th>Values / Display</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>PUT Status</strong></td>
+          <td>PUT system</td>
+          <td>
+            <strong>Not created</strong> — no PUT raised after last recharge<br>
+            <strong>Open</strong> — PUT raised, not resolved<br>
+            <strong>Resolved — router_recovered</strong> — device confirmed returned via PUT<br>
+            <strong>Resolved — other reason</strong> — PUT closed for non-recovery reason<br>
+            <strong>Expired</strong> — PUT auto-closed without resolution
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Device Status</strong></td>
+          <td>Postgres <code>t_device</code></td>
+          <td>
+            <strong>IN_WAREHOUSE</strong> — device received at Wiom warehouse<br>
+            <strong>IDLE</strong> — device at partner office<br>
+            <strong>INSTALLED</strong> (same account) — still at original customer<br>
+            <strong>INSTALLED</strong> (different account) — device moved to another customer<br>
+            <strong>LOST</strong> — marked lost
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Global Scanner</strong></td>
+          <td>Scanner system</td>
+          <td>Last scan: <strong>partner_id</strong>, <strong>scan date</strong>, <strong>photo captured</strong>. Hub-only — not exposed to partner app.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info"><strong>3PL confirmation</strong> is not a separate signal card. Anurag will add pickup confirmation details manually via the remarks + proof upload field in the refund checklist.</div>
+
+    <h3 id="diag-scenarios">Eligible vs Action-Needed</h3>
+
+    <table>
+      <thead>
+        <tr><th>Scenario</th><th>Signals</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PUT resolved — router recovered</td>
+          <td>PUT = resolved (router_recovered)</td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>Device at Wiom warehouse</td>
+          <td><code>t_device.status = IN_WAREHOUSE</code></td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>Device at partner office</td>
+          <td><code>t_device.status = IDLE</code></td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>Device at another customer</td>
+          <td><code>t_device.status = INSTALLED</code>, <code>user_account_id</code> differs</td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>Global Scanner — device scanned at partner</td>
+          <td>Scanner record with recent date + partner_id</td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>PUT open — no device confirmation yet</td>
+          <td>PUT = open, no corroborating device signal</td>
+          <td style="color:#e65100;font-weight:600;">Action needed — wait for PUT resolution or scanner scan</td>
+        </tr>
+        <tr>
+          <td>PUT not yet created</td>
+          <td>No PUT raised</td>
+          <td style="color:#e65100;font-weight:600;">Action needed — raise PUT or confirm via scanner</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-warn"><strong>PUT resolved — other reason</strong> is not a refund trigger. If the PUT was closed for a non-recovery reason but the partner still has the device, the onus is on the partner. CS should ask the partner to scan via Global Scanner before proceeding.</div>
+
+    <hr>
+
     <!-- HUB -->
     <h2 id="hub">Wiom Hub Sub-tab</h2>
 
@@ -203,9 +301,6 @@
       <li><strong>Reason (dropdown, required)</strong> — one must be selected before text input is accepted:
         <ul>
           <li>PUT resolved — router recovered</li>
-          <li>PUT resolved — other reason</li>
-          <li>PUT expired</li>
-          <li>PUT not yet created</li>
           <li>Device confirmed at Wiom warehouse</li>
           <li>Device at partner office (IDLE status)</li>
           <li>Device at another customer</li>
@@ -214,6 +309,7 @@
           <li>Others</li>
         </ul>
       </li>
+      <div class="callout callout-warn" style="margin:6px 0 0 0;"><strong>Not included:</strong> "PUT resolved — other reason", "PUT expired", "PUT not yet created" — these don't confirm device return and are not valid refund triggers on their own.</div>
       <li><strong>Remarks (text input, required)</strong> — additional context. Min 5 chars. Both reason + remarks stored in audit log.</li>
       <li><strong>Screenshot proof (required)</strong> — confirms device location or CS conversation</li>
       <li>Each item has a visual checkmark (grey → green on completion)</li>
