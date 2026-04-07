@@ -136,7 +136,7 @@ flowchart TD
     classDef gist fill:#fff3e0,stroke:#e65100,color:#4e2a00
 
     CALL["📞 Customer calls for refund"]:::start
-    CALL --> SHEET["CS opens customer record in Wiom Hub\nSignals surfaced: PUT status, device state,\nUPI on file, payout history, refund status"]:::action
+    CALL --> SHEET["CS opens customer record in Wiom Hub\nSignals surfaced: PUT status, device state,\nUPI submitted by customer, payout history, refund status"]:::action
     SHEET --> DIAG["Evaluate device location signal:\nCall customer and partner — where is the device?"]:::action
 
     DIAG -->|"1. Customer says\nthey still have it"| CX_HAS{"PUT state?"}:::decision
@@ -149,17 +149,17 @@ flowchart TD
     %% 1. CUSTOMER HAS DEVICE
     %% ============================================
     CX_HAS -->|"PUT open"| CX_OPEN["Tell partner to collect\ndevice from customer\n+ close PUT before expiry"]:::action
-    CX_OPEN --> CX_OPEN_UPI{"UPI on file?"}:::decision
+    CX_OPEN --> CX_OPEN_UPI{"UPI submitted by customer?"}:::decision
     CX_OPEN_UPI -->|"Yes"| CX_OPEN_DONE["✅ REFUND DECISION: YES\nAuto-processes once PUT closed\nWiom Hub: confirm payout status"]:::resolve
     CX_OPEN_UPI -->|"No"| CX_OPEN_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
     CX_HAS -->|"PUT expired"| CX_EXP["3PL collects device\ndirectly from customer\n→ sends to Wiom warehouse"]:::action
-    CX_EXP --> CX_EXP_UPI{"UPI on file?"}:::decision
+    CX_EXP --> CX_EXP_UPI{"UPI submitted by customer?"}:::decision
     CX_EXP_UPI -->|"Yes"| CX_EXP_DONE["✅ REFUND DECISION: YES\nAuto-processes after warehouse receipt\nTell customer to wait"]:::resolve
     CX_EXP_UPI -->|"No"| CX_EXP_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
     CX_HAS -->|"PUT resolved"| CX_RESOLVED["⚠️ Flag to product team:\nHow did partner close PUT\nwithout physically having device?\n─────────────────\nRaise device pickup request\nto 3PL team (Anurag)\nThey will arrange pickup from customer\n─────────────────\nAsk customer to wait:\nRefund processes once\n3PL signals device pickup"]:::escalate
-    CX_RESOLVED --> CX_RES_UPI{"UPI on file?"}:::decision
+    CX_RESOLVED --> CX_RES_UPI{"UPI submitted by customer?"}:::decision
     CX_RES_UPI -->|"Yes"| CX_RES_YES["REFUND DECISION: YES\nAuto-processes once 3PL\nsignals device pickup"]:::resolve
     CX_RES_UPI -->|"No"| CX_RES_NO["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub once\n3PL signals pickup"]:::wait
 
@@ -169,7 +169,7 @@ flowchart TD
     %% 2. PARTNER HAS DEVICE
     %% ============================================
     PTR_HAS -->|"PUT open,\nno closure attempt"| PTR_OPEN["Tell partner to close PUT\nvia app (photos + QR scan)"]:::action
-    PTR_OPEN --> PTR_OPEN_UPI{"UPI on file?"}:::decision
+    PTR_OPEN --> PTR_OPEN_UPI{"UPI submitted by customer?"}:::decision
     PTR_OPEN_UPI -->|"Yes"| PTR_OPEN_DONE["✅ REFUND DECISION: YES\nAuto-processes once closed + verified\nWiom Hub: confirm payout status"]:::resolve
     PTR_OPEN_UPI -->|"No"| PTR_OPEN_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
@@ -183,7 +183,7 @@ flowchart TD
     PTR_HAS -->|"Expired / TAT over /\ndevice marked LOST"| PTR_EXP["→ Global Scanner"]:::gist
     PTR_HAS -->|"No PUT exists\nin system"| PTR_NOPUT_LOC{"Check device\nlocation signal"}:::decision
     PTR_NOPUT_LOC -->|"Partner office\nor installed at\nnew customer"| PTR_LOC_CONFIRM["Device location confirmed\nProceed to refund"]:::action
-    PTR_LOC_CONFIRM --> PTR_NOPUT_UPI{"UPI on file?"}:::decision
+    PTR_LOC_CONFIRM --> PTR_NOPUT_UPI{"UPI submitted by customer?"}:::decision
     PTR_NOPUT_UPI -->|"Yes"| PTR_NOPUT_YES["REFUND DECISION: YES\nProcess refund via Wiom Hub"]:::resolve
     PTR_NOPUT_UPI -->|"No"| PTR_NOPUT_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
     PTR_NOPUT_LOC -->|"Location unknown"| PTR_LOC_SCAN["Ask partner to scan device\nvia Global Scanner\nDevice photo taken + location confirmed\nThen proceed to refund"]:::gist
@@ -192,7 +192,7 @@ flowchart TD
     %% Global Scanner fallback
     PTR_REJ --> GS["Ask partner to scan device\nvia Global Scanner\n🗣️ 'Scan it so it gets removed from\nyour lost section, you get penalised less'\nDo NOT mention it triggers refund"]:::gist
     PTR_EXP --> GS
-    GS --> GS_UPI{"UPI on file?"}:::decision
+    GS --> GS_UPI{"UPI submitted by customer?"}:::decision
     GS_UPI -->|"Yes"| GS_DONE["Device: LOST → IN OFFICE\n✅ REFUND DECISION: YES\nRefund flow triggers automatically"]:::resolve
     GS_UPI -->|"No"| GS_NOUPI["Device: LOST → IN OFFICE\nREFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
@@ -200,7 +200,7 @@ flowchart TD
     %% 3. 3PL HAS DEVICE
     %% ============================================
     TPL --> TPL_ACT["3PL confirmation received\n(API or Email)\nAnurag reviews and confirms pickup"]:::action
-    TPL_ACT --> TPL_UPI{"UPI on file?"}:::decision
+    TPL_ACT --> TPL_UPI{"UPI submitted by customer?"}:::decision
     TPL_UPI -->|"Yes"| TPL_DONE["✅ REFUND DECISION: YES\nAnurag approves → refund processes\nTell customer to wait"]:::resolve
     TPL_UPI -->|"No"| TPL_NOUPI["REFUND DECISION: YES\nAnurag approves\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 
@@ -215,7 +215,7 @@ flowchart TD
 
     WH_HAS -->|"Triggered,\nsuccess"| WH_OK["✅ REFUND DECISION: YES — Complete\nShare txn ID + date + amount\nIf customer disputes: verify with bank"]:::resolve
 
-    WH_HAS -->|"No UPI on file"| WH_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
+    WH_HAS -->|"No UPI submitted by customer"| WH_NOUPI["REFUND DECISION: YES\n→ No-UPI Flow (see below)\nProcess via Wiom Hub"]:::wait
 </pre>
 </div>
 
@@ -238,7 +238,7 @@ flowchart TD
     classDef decision fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
     classDef opstart fill:#1565c0,stroke:#0d47a1,color:#fff
 
-    TRIGGER["Wiom decision: REFUND ✅\nDevice confirmed recovered\nNo UPI on file"]:::opstart
+    TRIGGER["Wiom decision: REFUND ✅\nDevice confirmed recovered\nNo UPI submitted by customer"]:::opstart
 
     TRIGGER --> S1["STREAM 1 — AUTOMATIC\n(System-triggered, within 28-day active window)"]:::auto
 
@@ -438,7 +438,7 @@ flowchart TD
 
     ENTRY --> LIMIT{"Daily limit\nreached?"}:::opdecision
     LIMIT -->|"Yes"| BLOCKED["Feature blocked\nLimit reached: X txns or Rs.Y total\nOps manager notified"]:::opblocked
-    LIMIT -->|"No"| LOAD["Load customer record\nCustomer name, Refund amount\nRefund status, UPI on file"]:::opaction
+    LIMIT -->|"No"| LOAD["Load customer record\nCustomer name, Refund amount\nRefund status, UPI submitted by customer"]:::opaction
 
     LOAD --> DONE{"Refund count = 1\nfor this customer?"}:::opdecision
     DONE -->|"Yes"| SHOW_TXN["Refund already processed\nTxn ID, Amount, Date, Method\nNo further refund allowed\nApplies to system and manual both"]:::opblocked
@@ -534,13 +534,13 @@ flowchart TD
 <tr>
     <td>1</td>
     <td><strong>Wiom Hub sub-tab</strong></td>
-    <td>"Netbox Security Refund" sub-tab inside both <em>Customers</em> and <em>Archived Customers</em> views. Entry point for all manual refunds. Shows: customer name, refund amount*, refund status, UPI on file, payment source availability, action history.</td>
+    <td>"Netbox Security Refund" sub-tab inside both <em>Customers</em> and <em>Archived Customers</em> views. Entry point for all manual refunds. Shows: customer name, refund amount*, refund status, UPI submitted by customer, payment source availability, action history.</td>
     <td><span class="badge badge-high">High</span></td>
 </tr>
 <tr>
     <td>2</td>
     <td><strong>Customer record fetch</strong></td>
-    <td>On mobile number search: fetch refund status, locked refund amount*, UPI on file (if any), original payment source availability flag + masked source details (e.g. "HDFC card ••••4242", "jaivin@upi").</td>
+    <td>On mobile number search: fetch refund status, locked refund amount*, UPI submitted by customer (if any), original payment source availability flag + masked source details (e.g. "HDFC card ••••4242", "jaivin@upi").</td>
     <td><span class="badge badge-high">High</span></td>
 </tr>
 <tr>
