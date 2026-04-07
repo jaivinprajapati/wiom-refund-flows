@@ -349,7 +349,7 @@
       <div class="screen-card-head"><div class="screen-num">4</div><span class="screen-name">No UPI — source available</span></div>
       <div class="screen-body"><ul>
         <li>Checklist — CTAs disabled until both done</li>
-        <li><strong>Option A — Refund to source:</strong> shows "Original payment source" badge, ETA 3–5 business days. CTA: Refund to Source → confirm box → Confirm & Initiate</li>
+        <li><strong>Option A — Refund to source:</strong> shows "Original payment source" badge, ETA 3–5 days. CTA: Refund to Source → confirm box → Confirm & Initiate</li>
         <li><strong>Option B — Send WA link:</strong> CTA: Send Refund Link → confirm box (shows customer mobile) → Confirm & Send → WA link sent screen</li>
       </ul></div>
     </div>
@@ -444,7 +444,7 @@
       <div class="screen-card-head"><div class="screen-num">4</div><span class="screen-name">Confirm</span></div>
       <div class="screen-body"><ul>
         <li>Confirm card: UPI ID, resolved bank name, customer name</li>
-        <li>Summary: amount, ETA (3–5 business days), registered mobile</li>
+        <li>Summary: amount, ETA (3–5 days), registered mobile</li>
         <li>CTA: Confirm & Claim Refund</li>
         <li>Secondary: Edit UPI (back to UPI entry)</li>
       </ul></div>
@@ -481,7 +481,7 @@
       <tr><td>WA link TTL</td><td>30 min. Ops regenerates from Hub; previous link immediately invalidated.</td></tr>
       <tr><td>UPI per link</td><td>1 UPI submission per link. Once submitted and refund triggered, link consumed.</td></tr>
       <tr><td>Juspay validity</td><td>~6 months from original payment (varies by PG type). Expired = source unavailable → WA link path.</td></tr>
-      <tr><td>ETA</td><td>3–5 business days, blanket across all payment types (confirmed by Bhavin)</td></tr>
+      <tr><td>ETA</td><td>3–5 days, blanket across all payment types (confirmed by Bhavin)</td></tr>
       <tr><td>Proof + remarks</td><td>Both mandatory before any CTA is enabled. Stored in audit log.</td></tr>
     </table>
 
@@ -615,7 +615,7 @@
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
-      <div><div class="open-q">OTP delivery — SMS or WhatsApp?</div><div class="open-note">Confirm with Akash</div></div>
+      <div><div class="open-q">OTP delivery — SMS or WhatsApp?</div><div class="open-note">Confirm with Akash. Retry limit: 3 attempts per active link. TTL: Customer team to decide.</div></div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>

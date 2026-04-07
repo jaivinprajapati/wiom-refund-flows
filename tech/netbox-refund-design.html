@@ -540,7 +540,7 @@
                   <option value="3pl_confirmed">3PL pickup confirmed</option>
                   <option value="others">Others</option>
                 </select>
-                <textarea class="remarks-field" id="upi-remarks" placeholder="Additional remarks..." oninput="updateChecklist('upi')"></textarea>
+                <textarea class="remarks-field" id="upi-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="updateChecklist('upi')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -596,7 +596,7 @@
                   <option value="3pl_confirmed">3PL pickup confirmed</option>
                   <option value="others">Others</option>
                 </select>
-                <textarea class="remarks-field" id="source-remarks" placeholder="Additional remarks..." oninput="updateChecklist('source')"></textarea>
+                <textarea class="remarks-field" id="source-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="updateChecklist('source')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -618,13 +618,13 @@
             <div class="option-desc">Refund will be sent to the original payment instrument used at the time of booking. Source details are not visible at our end — if the customer asks, inform them the refund will reach the same account they paid from.</div>
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
               <span class="source-badge"><span class="material-icons">account_balance</span> Original payment source</span>
-              <span style="font-size:12px; color:#757575;">ETA: 3–5 business days</span>
+              <span style="font-size:12px; color:#757575;">ETA: 3–5 days</span>
             </div>
             <button class="btn btn-outlined" id="source-action-btn" disabled onclick="showConfirmSource()">Refund to Source</button>
 
             <div class="confirm-box" id="confirm-source-box" style="display:none">
               <div class="confirm-box-title">Confirm: refund to customer's original payment source?</div>
-              <div style="font-size:12px; color:#757575; margin-top:6px; margin-bottom:4px;">Source details are not visible at our end. Refund will reach the same account the customer paid from. ETA: 3–5 business days.</div>
+              <div style="font-size:12px; color:#757575; margin-top:6px; margin-bottom:4px;">Source details are not visible at our end. Refund will reach the same account the customer paid from. ETA: 3–5 days.</div>
               <div class="btn-row" style="margin-top:12px">
                 <button class="btn btn-primary" onclick="setState('success')">Confirm & Initiate</button>
                 <button class="btn btn-ghost" onclick="hideConfirmSource()">Cancel</button>
@@ -667,7 +667,7 @@
                   <option value="3pl_confirmed">3PL pickup confirmed</option>
                   <option value="others">Others</option>
                 </select>
-                <textarea class="remarks-field" id="nosource-remarks" placeholder="Additional remarks..." oninput="updateChecklist('nosource')"></textarea>
+                <textarea class="remarks-field" id="nosource-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="updateChecklist('nosource')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -711,6 +711,10 @@
           <div class="card">
             <div class="card-title">Submission</div>
             <div class="info-row" style="margin-bottom:10px;">
+              <span class="info-label">Reason</span>
+              <span class="info-value" id="wasent-sub-reason" style="font-weight:400; color:#424242;">—</span>
+            </div>
+            <div class="info-row" style="margin-bottom:10px;">
               <span class="info-label">Remarks</span>
               <span class="info-value" id="wasent-sub-remarks" style="font-weight:400; color:#424242;">—</span>
             </div>
@@ -746,13 +750,17 @@
             <span class="material-icons">check_circle</span>
             <div>
               <div class="alert-title">Refund initiated</div>
-              <div class="alert-body">Refund of ₹300 has been initiated. Customer will receive a WhatsApp confirmation. ETA: same day – 3 days.</div>
+              <div class="alert-body">Refund of ₹300 has been initiated. Customer will receive a WhatsApp confirmation. ETA: 3–5 days.</div>
             </div>
           </div>
 
           <!-- Submission summary (read-only) -->
           <div class="card">
             <div class="card-title">Submission</div>
+            <div class="info-row" style="margin-bottom:10px;">
+              <span class="info-label">Reason</span>
+              <span class="info-value" id="success-sub-reason" style="font-weight:400; color:#424242;">—</span>
+            </div>
             <div class="info-row" style="margin-bottom:10px;">
               <span class="info-label">Remarks</span>
               <span class="info-value" id="success-sub-remarks" style="font-weight:400; color:#424242;">—</span>
@@ -842,14 +850,15 @@
     const fileInputs = document.querySelectorAll('#screen-' + sourceScreen + ' input[type=file]');
     const reason = reasonEl ? (reasonLabels[reasonEl.value] || reasonEl.value) : '';
     const remarks = remarksEl ? remarksEl.value.trim() : '';
-    const combined = reason + (remarks ? ' — ' + remarks : '');
     const file = fileInputs.length > 0 && fileInputs[0].files.length > 0 ? fileInputs[0].files[0].name : null;
-    return { remarks: combined, file };
+    return { reason, remarks, file };
   }
 
-  function populateSubmission(targetPrefix, remarks, file) {
+  function populateSubmission(targetPrefix, reason, remarks, file) {
+    const reasonEl = document.getElementById(targetPrefix + '-sub-reason');
     const remarksEl = document.getElementById(targetPrefix + '-sub-remarks');
     const proofEl = document.getElementById(targetPrefix + '-sub-proof');
+    if (reasonEl) reasonEl.textContent = reason || '—';
     if (remarksEl) remarksEl.textContent = remarks || '—';
     if (proofEl) {
       if (file) {
@@ -863,9 +872,9 @@
   function setState(s) {
     // capture submission before leaving the active action screen
     if (['success','wasent'].includes(s) && lastActionScreen) {
-      const { remarks, file } = captureSubmission(lastActionScreen);
+      const { reason, remarks, file } = captureSubmission(lastActionScreen);
       const prefix = s === 'success' ? 'success' : 'wasent';
-      populateSubmission(prefix, remarks, file);
+      populateSubmission(prefix, reason, remarks, file);
     }
 
     states.forEach(id => {
