@@ -541,10 +541,7 @@
     document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
 
-    const isArchived = ['another_customer','put_not_created'].includes(s);
-    document.getElementById('cust-dot').className = 'status-dot' + (isArchived ? ' archived' : '');
-    document.getElementById('arch-badge').style.display = isArchived ? 'inline-flex' : 'none';
-    document.getElementById('tab-net').style.display = isArchived ? 'none' : 'block';
+    // Customer archived status is a separate field from the customer team — not derived from device signals.
   }
 </script>
 </body>
