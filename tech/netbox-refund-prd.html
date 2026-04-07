@@ -110,7 +110,7 @@
 
     <!-- OVERVIEW -->
     <h2 id="overview">Overview</h2>
-    <p>A controlled, audited interface for ops leads to manually process Netbox security deposit refunds when the auto-trigger fails or doesn't apply. Two modules: <strong>Wiom Hub sub-tab</strong> (ops-facing) and <strong>Captive portal</strong> (customer-facing, browser-based, for archived customers with no app access).</p>
+    <p>A controlled, audited interface for CS agents to manually process Netbox security deposit refunds when the auto-trigger fails or doesn't apply. Two modules: <strong>Wiom Hub sub-tab</strong> (ops-facing) and <strong>Captive portal</strong> (customer-facing, browser-based, for archived customers with no app access).</p>
 
     <!-- PROBLEM -->
     <h2 id="problem">Problem</h2>
@@ -132,8 +132,7 @@
     <h2 id="users">Users</h2>
     <table>
       <tr><th>User</th><th>Where</th><th>What they do</th></tr>
-      <tr><td><strong>Ops Lead</strong></td><td>Wiom Hub</td><td>Reviews case, fills checklist, triggers refund or sends WA link</td></tr>
-      <tr><td><strong>CS Agent</strong></td><td>Wiom Hub (read)</td><td>Surfaces refund need on call, checks status</td></tr>
+      <tr><td><strong>CS Agent</strong></td><td>Wiom Hub</td><td>Reviews case, fills checklist, triggers refund or sends WA link</td></tr>
       <tr><td><strong>Customer (archived)</strong></td><td>Captive portal (browser)</td><td>Receives WA link, verifies OTP, submits UPI, confirms refund</td></tr>
     </table>
 
@@ -267,7 +266,7 @@
         <ul>
           <li>Global cap: <strong>5 cases/day</strong> AND <strong>₹1,500/day</strong> (5 × ₹300) — whichever hits first</li>
           <li>Both values are <strong>configurable</strong> — stored as system config, not hardcoded</li>
-          <li>Resets at midnight IST. Ops manager notified when limit is hit.</li>
+          <li>Resets at midnight IST. Jaivin (Product) notified when limit is hit.</li>
           <li>Shows error alert only — no CTA, no other UI</li>
         </ul>
       </div>
@@ -291,7 +290,7 @@
 
     <h3 id="hub-paths">Refund Paths</h3>
     <table>
-      <tr><th>Scenario</th><th>What ops sees</th><th>Available actions</th></tr>
+      <tr><th>Scenario</th><th>What CS sees</th><th>Available actions</th></tr>
       <tr><td>Customer submitted UPI</td><td>UPI displayed as chip</td><td>Process Refund</td></tr>
       <tr><td>No UPI submitted — payment source available</td><td>"Original payment source" (no instrument details — Juspay doesn't expose them)</td><td>Refund to Source <em>or</em> Send WA link</td></tr>
       <tr><td>No UPI submitted — no source (expired/missing)</td><td>Source option shown as disabled</td><td>Send WA link only</td></tr>
@@ -392,15 +391,15 @@
 
     <h3 id="captive-flow">Flow</h3>
     <ol>
-      <li>Ops sends link from Hub → WhatsApp delivered via <strong>Clevertap event</strong> (dynamic portal link passed as property). Jaivin to create Clevertap WhatsApp campaign.</li>
+      <li>CS agent sends link from Hub → WhatsApp delivered via <strong>Clevertap event</strong> (dynamic portal link passed as property). Jaivin to create Clevertap WhatsApp campaign.</li>
       <li>Customer opens link in browser → sees name + refund amount</li>
       <li>OTP verification — delivery channel (SMS or WhatsApp) to be confirmed with Akash</li>
       <li>Customer enters UPI → system resolves bank name via lookup</li>
       <li>Confirmation screen — customer reviews UPI, amount, ETA → confirms</li>
       <li>Refund auto-initiates → success screen + WhatsApp confirmations sent ("initiated" + "completed")</li>
     </ol>
-    <p><strong>Link TTL:</strong> 30 minutes. Ops regenerates from Hub if expired. Old link immediately invalidated.</p>
-    <p><strong>Expired link resolution:</strong> Customer calls back → ops regenerates → new WhatsApp sent.</p>
+    <p><strong>Link TTL:</strong> 30 minutes. CS agent regenerates from Hub if expired. Old link immediately invalidated.</p>
+    <p><strong>Expired link resolution:</strong> Customer calls back → CS agent regenerates → new WhatsApp sent.</p>
 
     <h3 id="captive-screens">Screens</h3>
 
@@ -478,7 +477,7 @@
       <tr><td>Refund amount</td><td>TBD — Bhavin to confirm. PayG with no PUT: Bhavin to set amount. Others: amount always available in system.</td></tr>
       <tr><td>Per-customer cap</td><td>1 refund per customer (system + manual). Applies on success only — failures don't count.</td></tr>
       <tr><td>Daily global limit</td><td># transactions AND total Rs — whichever hits first. Resets midnight. Values TBD.</td></tr>
-      <tr><td>WA link TTL</td><td>30 min. Ops regenerates from Hub; previous link immediately invalidated.</td></tr>
+      <tr><td>WA link TTL</td><td>30 min. CS agent regenerates from Hub; previous link immediately invalidated.</td></tr>
       <tr><td>UPI per link</td><td>1 UPI submission per link. Once submitted and refund triggered, link consumed.</td></tr>
       <tr><td>Juspay validity</td><td>~6 months from original payment (varies by PG type). Expired = source unavailable → WA link path.</td></tr>
       <tr><td>ETA</td><td>3–5 days, blanket across all payment types (confirmed by Bhavin)</td></tr>
@@ -487,7 +486,7 @@
 
     <!-- ACCESS -->
     <h2 id="access">Access Control</h2>
-    <p>Gated by permission: <code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code>. Exact roles TBD — ops leads and above. Tab visible to all Hub users; CTAs disabled without permission.</p>
+    <p>Gated by permission: <code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code>. V1 users: CS agents only — access assigned manually. Tab visible to all Hub users; CTAs disabled without permission.</p>
 
     <!-- NOTIFICATIONS -->
     <h2 id="notifications">Notifications</h2>
@@ -496,8 +495,7 @@
       <tr><td>Refund initiated</td><td>Customer</td><td>WhatsApp</td><td>"Your security deposit refund of ₹X has been initiated. ETA: 3–5 days."</td></tr>
       <tr><td>Refund completed</td><td>Customer</td><td>WhatsApp</td><td>"Your refund of ₹X has been credited."</td></tr>
       <tr><td>WA link sent</td><td>Customer</td><td>WhatsApp (Clevertap)</td><td>Refund link message with dynamic captive portal URL</td></tr>
-      <tr><td>Daily limit hit</td><td>Ops manager</td><td>TBD</td><td>Alert with count + total amount processed that day</td></tr>
-      <tr><td>Refund failed</td><td>Ops</td><td>TBD — Slack / Hub alert</td><td>Failure alert; flow resets in Hub for retry</td></tr>
+      <tr><td>Daily limit hit</td><td>Jaivin (Product)</td><td>TBD</td><td>Alert with count + total amount processed that day</td></tr>
     </table>
 
     <!-- CROSS-POD DEPENDENCIES -->
@@ -532,7 +530,7 @@
         </tr>
         <tr>
           <td>Guardrails</td>
-          <td>Daily cap counter (5 txns / ₹1,500 — configurable), per-customer cap keyed on <code>user_account_id</code>, reset at midnight IST, ops alert on breach.</td>
+          <td>Daily cap counter (5 txns / ₹1,500 — configurable), per-customer cap keyed on <code>user_account_id</code>, reset at midnight IST, Jaivin (Product) alerted on breach.</td>
           <td>Hub frontend</td>
         </tr>
         <tr>
