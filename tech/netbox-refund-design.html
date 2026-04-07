@@ -261,6 +261,27 @@
     .check-label { font-size: 12px; font-weight: 500; color: #424242; margin-bottom: 8px; }
 
     /* ── Remarks field ──────────────────────────────────── */
+    .remarks-select {
+      width: 100%;
+      border: 1px solid #bdbdbd;
+      border-radius: 4px;
+      padding: 9px 12px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      color: #212121;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239e9e9e' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .remarks-select:focus { border-color: rgb(217,0,141); }
+    .remarks-select option[value=""] { color: #bdbdbd; }
     .remarks-field {
       width: 100%;
       border: 1px solid #bdbdbd;
@@ -269,7 +290,7 @@
       font-family: 'Roboto', sans-serif;
       font-size: 13px;
       resize: vertical;
-      min-height: 72px;
+      min-height: 64px;
       color: #212121;
       outline: none;
       transition: border-color 0.15s;
@@ -506,10 +527,23 @@
           <div class="checklist-card">
             <div class="checklist-title">Before you proceed</div>
             <div class="checklist-item">
-              <span class="material-icons check-icon" id="upi-check1">check_circle</span>
+              <span class="material-icons check-icon" id="upi-check1">check_circle_outline</span>
               <div class="check-body">
-                <div class="check-label">Add remarks <span class="field-required">*</span></div>
-                <textarea class="remarks-field" id="upi-remarks" placeholder="Reason for manual refund..." oninput="updateChecklist('upi')">CS confirmed device at partner office. PUT closed as resolved. Refund not auto-triggered.</textarea>
+                <div class="check-label">Select reason <span class="field-required">*</span></div>
+                <select class="remarks-select" id="upi-reason" onchange="updateChecklist('upi')">
+                  <option value="">— Select a reason —</option>
+                  <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                  <option value="put_resolved_other">PUT resolved — other reason</option>
+                  <option value="put_expired">PUT expired</option>
+                  <option value="put_not_created">PUT not yet created</option>
+                  <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                  <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                  <option value="device_another_customer">Device at another customer</option>
+                  <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                  <option value="3pl_confirmed">3PL pickup confirmed</option>
+                  <option value="others">Others</option>
+                </select>
+                <textarea class="remarks-field" id="upi-remarks" placeholder="Additional remarks..." oninput="updateChecklist('upi')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -554,8 +588,21 @@
             <div class="checklist-item">
               <span class="material-icons check-icon" id="source-check1">check_circle_outline</span>
               <div class="check-body">
-                <div class="check-label">Add remarks <span class="field-required">*</span></div>
-                <textarea class="remarks-field" id="source-remarks" placeholder="Reason for manual refund..." oninput="updateChecklist('source')">Device confirmed at warehouse. Customer never submitted UPI. Original payment source available.</textarea>
+                <div class="check-label">Select reason <span class="field-required">*</span></div>
+                <select class="remarks-select" id="source-reason" onchange="updateChecklist('source')">
+                  <option value="">— Select a reason —</option>
+                  <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                  <option value="put_resolved_other">PUT resolved — other reason</option>
+                  <option value="put_expired">PUT expired</option>
+                  <option value="put_not_created">PUT not yet created</option>
+                  <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                  <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                  <option value="device_another_customer">Device at another customer</option>
+                  <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                  <option value="3pl_confirmed">3PL pickup confirmed</option>
+                  <option value="others">Others</option>
+                </select>
+                <textarea class="remarks-field" id="source-remarks" placeholder="Additional remarks..." oninput="updateChecklist('source')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -615,8 +662,21 @@
             <div class="checklist-item">
               <span class="material-icons check-icon" id="nosource-check1">check_circle_outline</span>
               <div class="check-body">
-                <div class="check-label">Add remarks <span class="field-required">*</span></div>
-                <textarea class="remarks-field" id="nosource-remarks" placeholder="Reason for manual refund..." oninput="updateChecklist('nosource')">Device at warehouse. No UPI submitted. Original payment source no longer available.</textarea>
+                <div class="check-label">Select reason <span class="field-required">*</span></div>
+                <select class="remarks-select" id="nosource-reason" onchange="updateChecklist('nosource')">
+                  <option value="">— Select a reason —</option>
+                  <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                  <option value="put_resolved_other">PUT resolved — other reason</option>
+                  <option value="put_expired">PUT expired</option>
+                  <option value="put_not_created">PUT not yet created</option>
+                  <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                  <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                  <option value="device_another_customer">Device at another customer</option>
+                  <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                  <option value="3pl_confirmed">3PL pickup confirmed</option>
+                  <option value="others">Others</option>
+                </select>
+                <textarea class="remarks-field" id="nosource-remarks" placeholder="Additional remarks..." oninput="updateChecklist('nosource')"></textarea>
               </div>
             </div>
             <div class="checklist-item">
@@ -742,9 +802,10 @@
   const checklistState = { upi: [false, false], source: [false, false], nosource: [false, false] };
 
   function updateChecklist(screen) {
+    const reasonEl = document.getElementById(screen + '-reason');
     const remarkEl = document.getElementById(screen + '-remarks');
     const fileInputs = document.querySelectorAll('#screen-' + screen + ' input[type=file]');
-    const check1 = remarkEl && remarkEl.value.trim().length >= 5;
+    const check1 = reasonEl && reasonEl.value !== '' && remarkEl && remarkEl.value.trim().length >= 5;
     const check2 = fileInputs.length > 0 && fileInputs[0].files.length > 0;
 
     checklistState[screen][0] = check1;
@@ -771,17 +832,30 @@
   // track which action screen the user came from
   let lastActionScreen = null;
 
-  // initialise checklist for upi screen (pre-filled remarks → check1 starts green)
-  window.addEventListener('DOMContentLoaded', () => {
-    updateChecklist('upi');
-  });
+  // all checklists start empty
+
+  const reasonLabels = {
+    'put_resolved_recovered': 'PUT resolved — router recovered',
+    'put_resolved_other': 'PUT resolved — other reason',
+    'put_expired': 'PUT expired',
+    'put_not_created': 'PUT not yet created',
+    'device_warehouse': 'Device confirmed at Wiom warehouse',
+    'device_partner_idle': 'Device at partner office (IDLE)',
+    'device_another_customer': 'Device at another customer',
+    'global_scanner': 'Global Scanner — device scanned at partner location',
+    '3pl_confirmed': '3PL pickup confirmed',
+    'others': 'Others'
+  };
 
   function captureSubmission(sourceScreen) {
+    const reasonEl = document.getElementById(sourceScreen + '-reason');
     const remarksEl = document.getElementById(sourceScreen + '-remarks');
     const fileInputs = document.querySelectorAll('#screen-' + sourceScreen + ' input[type=file]');
+    const reason = reasonEl ? (reasonLabels[reasonEl.value] || reasonEl.value) : '';
     const remarks = remarksEl ? remarksEl.value.trim() : '';
+    const combined = reason + (remarks ? ' — ' + remarks : '');
     const file = fileInputs.length > 0 && fileInputs[0].files.length > 0 ? fileInputs[0].files[0].name : null;
-    return { remarks, file };
+    return { remarks: combined, file };
   }
 
   function populateSubmission(targetPrefix, remarks, file) {

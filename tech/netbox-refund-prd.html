@@ -200,10 +200,24 @@
     <h3 id="hub-checklist">Pre-Action Checklist</h3>
     <ul>
       <li>All action CTAs are <strong>disabled</strong> until both items are complete</li>
-      <li><strong>Remarks</strong> — reason for manual refund (min 5 chars). Required for audit trail.</li>
-      <li><strong>Screenshot proof</strong> — confirms device location or CS conversation</li>
+      <li><strong>Reason (dropdown, required)</strong> — one must be selected before text input is accepted:
+        <ul>
+          <li>PUT resolved — router recovered</li>
+          <li>PUT resolved — other reason</li>
+          <li>PUT expired</li>
+          <li>PUT not yet created</li>
+          <li>Device confirmed at Wiom warehouse</li>
+          <li>Device at partner office (IDLE status)</li>
+          <li>Device at another customer</li>
+          <li>Global Scanner — device scanned at partner location</li>
+          <li>3PL pickup confirmed</li>
+          <li>Others</li>
+        </ul>
+      </li>
+      <li><strong>Remarks (text input, required)</strong> — additional context. Min 5 chars. Both reason + remarks stored in audit log.</li>
+      <li><strong>Screenshot proof (required)</strong> — confirms device location or CS conversation</li>
       <li>Each item has a visual checkmark (grey → green on completion)</li>
-      <li>Submitted remarks + proof filename shown on success screen as read-only Submission card</li>
+      <li>Submitted reason + remarks + proof filename shown on success screen as read-only Submission card</li>
     </ul>
 
     <h3 id="hub-screens">All Screens</h3>
