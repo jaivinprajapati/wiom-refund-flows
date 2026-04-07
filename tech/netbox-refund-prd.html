@@ -263,10 +263,10 @@
       </div>
       <div class="screen-body">
         <ul>
-          <li>Global cap on # transactions AND total Rs amount — whichever hits first</li>
-          <li>Resets at midnight. Ops manager notified when limit is hit.</li>
+          <li>Global cap: <strong>5 cases/day</strong> AND <strong>₹1,500/day</strong> (5 × ₹300) — whichever hits first</li>
+          <li>Both values are <strong>configurable</strong> — stored as system config, not hardcoded</li>
+          <li>Resets at midnight IST. Ops manager notified when limit is hit.</li>
           <li>Shows error alert only — no CTA, no other UI</li>
-          <li>Limit values: <strong>TBD</strong></li>
         </ul>
       </div>
     </div>
@@ -279,7 +279,8 @@
       </div>
       <div class="screen-body">
         <ul>
-          <li>Per-customer cap = 1 refund (system + manual combined). Counts only on success — failures don't count.</li>
+          <li>Per-customer cap = 1 refund (system + manual combined), keyed on <code>user_account_id</code> — not mobile number</li>
+          <li>Counts only on success — failures, pending, processing do not count</li>
           <li>Shows info alert + read-only refund details: txn ID, amount, method, refunded to, status, processed at</li>
           <li>No CTA. No further refund possible.</li>
         </ul>
