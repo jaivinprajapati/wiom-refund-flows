@@ -294,7 +294,7 @@
                         <div class="node n-signal">
                           <div class="node-head">
                             <span class="node-badge">Signal Check</span>
-                            <span class="node-title">At least 1 of 5 eligible signals must be confirmed (CS reviews diagnostic view)</span>
+                            <span class="node-title">At least 1 of 6 eligible signals must be confirmed. First 3 are system-driven. 3PL is operator-uploaded (Anurag only).</span>
                           </div>
                           <div class="node-body">
                             <div class="sig-grid">
@@ -323,6 +323,13 @@
                                 <div style="font-size:10px;color:#888;margin-top:4px;">Returns: partner_id, date, photo. Hub-only.</div>
                                 <div class="srcs" style="margin-top:5px;"><span class="src s-scanner">Scanner System — CX-1095</span></div>
                               </div>
+                              <div class="sig-card" style="border-color:#c8e6c9; background:#f9fbe7;">
+                                <div class="sig-title" style="color:#2e7d32;">3PL Confirmation <span style="font-weight:400; font-size:10px; color:#888;">(permission-gated)</span></div>
+                                <div class="sig-row"><span class="dot dot-g"></span>Proof uploaded by Anurag ✓</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>Not uploaded ✗</div>
+                                <div style="font-size:10px;color:#888;margin-top:4px;">Upload CTA requires <code>CUSTOMER_MODULE_NETBOX_3PL_CONFIRMATION</code>. CS can see card but cannot upload. Anurag uploads → signal turns green → CS can proceed. Auto-fills reason + proof in checklist.</div>
+                                <div class="srcs" style="margin-top:5px;"><span class="src s-audit">Anurag (Ops) — manual upload</span></div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -331,7 +338,7 @@
                           <div class="branch-item">
                             <div class="branch-label bl-none">NONE GREEN</div>
                             <div class="node n-stop">
-                              <div class="node-head"><span class="node-badge">Action Needed</span><span class="node-title">No confirmed signal — PUT not created → raise PUT · PUT open → wait for resolution or get scanner scan</span></div>
+                              <div class="node-head"><span class="node-badge">Action Needed</span><span class="node-title">No confirmed signal — PUT not created → raise PUT · PUT open → wait for resolution or get scanner scan · 3PL case → Anurag to upload confirmation</span></div>
                             </div>
                           </div>
 
@@ -345,8 +352,8 @@
                                 <span class="node-title">Complete pre-action checklist — all 3 required before any CTA unlocks</span>
                               </div>
                               <div class="node-body">
-                                <div class="node-desc">① Reason (dropdown — 7 options) &nbsp;·&nbsp; ② Remarks (text, min 5 chars) &nbsp;·&nbsp; ③ Screenshot proof (upload). All three stored in audit trail.</div>
-                                <div class="srcs"><span class="src s-cs">CS Input — reason + remarks + proof upload</span></div>
+                                <div class="node-desc">① Reason (dropdown — 7 options) &nbsp;·&nbsp; ② Remarks (text, min 5 chars) &nbsp;·&nbsp; ③ Screenshot proof (upload). All three stored in audit trail.<br><strong>3PL path:</strong> reason auto-locked to "3PL pickup confirmed" + proof pre-filled from Anurag's upload. CS adds remarks only.</div>
+                                <div class="srcs"><span class="src s-cs">CS Input — reason + remarks + proof upload</span><span class="src s-audit">3PL path: pre-filled from Anurag's upload</span></div>
                               </div>
                             </div>
 

@@ -134,6 +134,7 @@
     <table>
       <tr><th>User</th><th>Where</th><th>What they do</th></tr>
       <tr><td><strong>CS Agent</strong></td><td>Wiom Hub</td><td>Reviews case, fills checklist, triggers refund, sends in-app nudge (non-archived), or sends WA link (archived)</td></tr>
+      <tr><td><strong>Anurag (Ops)</strong></td><td>Wiom Hub — 3PL signal card</td><td>Uploads 3PL pickup confirmation proof. Creates the green signal that unlocks refund for CS.</td></tr>
       <tr><td><strong>Customer (non-archived)</strong></td><td>Wiom app</td><td>Receives in-app nudge, submits UPI in app</td></tr>
       <tr><td><strong>Customer (archived)</strong></td><td>Captive portal (browser)</td><td>Receives WA link, verifies OTP, submits UPI, confirms refund</td></tr>
     </table>
@@ -157,7 +158,7 @@
     <p>Prototype: <a href="https://jaivinprajapati.github.io/wiom-refund-flows/tech/diagnostic-signals.html" target="_blank">diagnostic-signals.html</a></p>
 
     <h3 id="diag-signals">Signal Cards</h3>
-    <p>Three signal cards are shown per customer:</p>
+    <p>Four signal cards are shown per customer. The first three are system-driven (read-only). The fourth is operator-uploaded and permission-gated.</p>
 
     <table>
       <thead>
@@ -191,10 +192,18 @@
           <td>Scanner system</td>
           <td>Last scan: <strong>partner_id</strong>, <strong>scan date</strong>, <strong>photo captured</strong>. Hub-only — not exposed to partner app.</td>
         </tr>
+        <tr>
+          <td><strong>3PL Confirmation</strong></td>
+          <td>Anurag (manual upload) — permission-gated</td>
+          <td>
+            <strong>Not uploaded</strong> (default) — grey, CTA visible but disabled for CS agents<br>
+            <strong>Confirmed</strong> — green, proof uploaded by Anurag (filename, upload timestamp, uploaded by)<br>
+            <strong>Upload CTA:</strong> "Upload 3PL Proof" — requires permission <code>CUSTOMER_MODULE_NETBOX_3PL_CONFIRMATION</code>. Only Anurag holds this permission.<br>
+            <strong>Critical:</strong> CS agents can see the card and its state but cannot upload. Anurag uploads → card turns green → refund unlocks for CS.
+          </td>
+        </tr>
       </tbody>
     </table>
-
-    <div class="callout callout-info"><strong>3PL confirmation</strong> is not a separate signal card. Anurag will add pickup confirmation details manually via the remarks + proof upload field in the refund checklist.</div>
 
     <h3 id="diag-scenarios">Eligible vs Action-Needed</h3>
     <div class="callout callout-warn"><strong>Rule:</strong> At least one of the eligible signal conditions below must be true before a refund can be processed. If none are met, the refund cannot proceed regardless of other factors.</div>
@@ -227,6 +236,11 @@
         <tr>
           <td>Global Scanner — device scanned at partner</td>
           <td>Scanner record with recent date + partner_id</td>
+          <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
+        </tr>
+        <tr>
+          <td>3PL confirmation uploaded by Anurag</td>
+          <td>3PL Confirmation card = Confirmed (proof uploaded, permission-gated)</td>
           <td style="color:#2e7d32;font-weight:600;">Refund eligible</td>
         </tr>
         <tr>
@@ -320,7 +334,7 @@
 
     <h3 id="hub-checklist">Pre-Action Checklist</h3>
     <ul>
-      <li>All action CTAs are <strong>disabled</strong> until both items are complete</li>
+      <li>All action CTAs are <strong>disabled</strong> until all checklist items are complete</li>
       <li><strong>Reason (dropdown, required)</strong> — one must be selected before text input is accepted:
         <ul>
           <li>PUT resolved — router recovered</li>
@@ -328,16 +342,17 @@
           <li>Device at partner office (IDLE status)</li>
           <li>Device at another customer</li>
           <li>Global Scanner — device scanned at partner location</li>
-          <li>3PL pickup confirmed</li>
+          <li>3PL pickup confirmed <em>(auto-selected and locked when 3PL signal is green — CS cannot change it)</em></li>
           <li>Others</li>
         </ul>
       </li>
       <div class="callout callout-warn" style="margin:6px 0 0 0;"><strong>Not included:</strong> "PUT resolved — other reason", "PUT expired", "PUT not yet created" — these don't confirm device return and are not valid refund triggers on their own.</div>
       <li><strong>Remarks (text input, required)</strong> — additional context. Min 5 chars. Both reason + remarks stored in audit log.</li>
-      <li><strong>Screenshot proof (required)</strong> — confirms device location or CS conversation</li>
+      <li><strong>Screenshot proof (required)</strong> — confirms device location or CS conversation. <em>3PL path: auto-populated with the file Anurag uploaded as proof. Field shown as read-only pre-filled attachment — CS cannot change or remove it. CS must still add remarks.</em></li>
       <li>Each item has a visual checkmark (grey → green on completion)</li>
       <li>Submitted reason + remarks + proof filename shown on success screen as read-only Submission card</li>
     </ul>
+    <div class="callout callout-info"><strong>3PL path behaviour:</strong> When 3PL Confirmation is the only green signal — reason is locked to "3PL pickup confirmed" and proof is pre-filled from Anurag's upload. CS adds remarks and proceeds. CS cannot override the reason or proof on this path.</div>
 
     <h3 id="hub-screens">All Screens</h3>
 
@@ -521,7 +536,20 @@
 
     <!-- ACCESS -->
     <h2 id="access">Access Control</h2>
-    <p>Gated by permission: <code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code>. V1 users: CS agents only — access assigned manually. Tab visible to all Hub users; CTAs disabled without permission.</p>
+    <table>
+      <tr><th>Permission</th><th>Who holds it</th><th>What it unlocks</th></tr>
+      <tr>
+        <td><code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code></td>
+        <td>CS agents (V1 — assigned manually, small initial group)</td>
+        <td>Access to Netbox Security Refund sub-tab. Can view all signal cards, complete checklist, and process refunds when diagnostic shows ≥1 green signal. Cannot upload 3PL proof.</td>
+      </tr>
+      <tr>
+        <td><code>CUSTOMER_MODULE_NETBOX_3PL_CONFIRMATION</code></td>
+        <td>Anurag (Ops) — assigned manually</td>
+        <td>Unlocks "Upload 3PL Proof" CTA on the 3PL Confirmation signal card. Uploading valid proof sets the signal to green, enabling CS to proceed with refund. Without this permission, the upload CTA is visible but disabled.</td>
+      </tr>
+    </table>
+    <div class="callout callout-warn"><strong>Strict separation:</strong> CS cannot create a green signal — they can only act once a green signal exists. Anurag cannot directly process a refund — they can only create the green signal. The refund action requires both permissions to have been exercised in sequence.</div>
 
     <!-- NOTIFICATIONS -->
     <h2 id="notifications">Notifications</h2>
