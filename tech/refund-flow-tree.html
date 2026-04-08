@@ -2,642 +2,625 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Netbox Refund — System Flow Tree</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>Netbox Refund — Decision Tree</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #f7f7f8; color: #1a1a1a; font-size: 13px; }
+    body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #1a1a1a; font-size: 13px; padding: 32px 24px 80px; }
 
-    .page { max-width: 1100px; margin: 0 auto; padding: 36px 24px 80px; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { font-size: 12px; color: #888; margin-bottom: 28px; }
 
-    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-    .page-sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+    /* ── TREE STRUCTURE ── */
+    .tree { display: flex; flex-direction: column; align-items: flex-start; }
 
-    /* legend */
-    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
-    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .tree-row { display: flex; flex-direction: column; }
 
-    /* section headings */
-    .section-label {
-      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
-      color: #aaa; margin: 36px 0 16px; display: flex; align-items: center; gap: 10px;
+    /* vertical spine below a node */
+    .branch-down {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-left: 20px;
+      border-left: 2px solid #d0d0d0;
+      margin-left: 18px;
+      margin-top: 0;
     }
-    .section-label::after { content: ''; flex: 1; border-top: 1px solid #e8e8e8; }
 
-    /* flow column */
-    .flow { position: relative; padding-left: 28px; }
-    .flow::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e0e0e0; }
+    /* each child entry */
+    .branch-item {
+      position: relative;
+      padding-left: 22px;
+      margin-top: 8px;
+    }
+    /* horizontal connector */
+    .branch-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 19px;
+      width: 20px;
+      height: 2px;
+      background: #d0d0d0;
+    }
 
-    /* node */
+    /* branch condition label on the line */
+    .branch-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 1px 6px; border-radius: 3px; display: inline-block; margin-bottom: 5px;
+    }
+    .bl-yes  { background: #e8f5e9; color: #2e7d32; }
+    .bl-no   { background: #ffebee; color: #c62828; }
+    .bl-none { background: #fff3e0; color: #bf360c; }
+    .bl-a    { background: #e3f2fd; color: #1565c0; }
+    .bl-b    { background: #f3e5f5; color: #6a1b9a; }
+    .bl-c    { background: #e8eaf6; color: #283593; }
+
+    /* ── NODES ── */
     .node {
-      position: relative; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 0;
-    }
-    .node::before {
-      content: ''; position: absolute; left: -18px; top: 20px;
-      width: 18px; height: 2px; background: #e0e0e0;
-    }
-
-    .node-body {
-      flex: 1; border-radius: 7px; border: 1px solid #e8e8e8;
-      background: #fff; overflow: hidden;
+      border-radius: 7px; border: 1px solid #e0e0e0;
+      background: #fff; min-width: 320px; max-width: 600px;
+      overflow: hidden;
     }
     .node-head {
       display: flex; align-items: center; gap: 8px;
-      padding: 9px 12px; border-bottom: 1px solid #f0f0f0;
+      padding: 8px 12px 7px;
     }
-    .node-type {
+    .node-badge {
       font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
-      padding: 2px 6px; border-radius: 3px; flex-shrink: 0;
+      padding: 2px 6px; border-radius: 3px; flex-shrink: 0; white-space: nowrap;
     }
-    .node-title { font-size: 13px; font-weight: 600; color: #111; }
-    .node-content { padding: 8px 12px; }
+    .node-title { font-size: 13px; font-weight: 600; color: #111; line-height: 1.3; }
+    .node-body { padding: 0 12px 9px; }
+    .node-desc { font-size: 11px; color: #666; margin-bottom: 5px; line-height: 1.4; }
+
+    /* node type colours (left border + badge) */
+    .n-root   .node-head { border-left: 3px solid rgb(217,0,141); }
+    .n-root   .node-badge { background: rgba(217,0,141,0.12); color: rgb(217,0,141); }
+    .n-guard  .node-head { border-left: 3px solid #c62828; }
+    .n-guard  .node-badge { background: #ffebee; color: #c62828; }
+    .n-signal .node-head { border-left: 3px solid #e65100; }
+    .n-signal .node-badge { background: #fff3e0; color: #e65100; }
+    .n-action .node-head { border-left: 3px solid #6a1b9a; }
+    .n-action .node-badge { background: #f3e5f5; color: #6a1b9a; }
+    .n-decide .node-head { border-left: 3px solid #1565c0; }
+    .n-decide .node-badge { background: #e3f2fd; color: #1565c0; }
+    .n-process .node-head { border-left: 3px solid #2e7d32; }
+    .n-process .node-badge { background: #e8f5e9; color: #2e7d32; }
+    .n-stop   { border-color: #ffcdd2; }
+    .n-stop   .node-head { border-left: 3px solid #ef9a9a; background: #fff5f5; }
+    .n-stop   .node-badge { background: #ffebee; color: #c62828; }
+    .n-ok     { border-color: #a5d6a7; }
+    .n-ok     .node-head { border-left: 3px solid #81c784; background: #f1f8f1; }
+    .n-ok     .node-badge { background: #e8f5e9; color: #2e7d32; }
 
     /* source badges */
-    .sources { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+    .srcs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
     .src {
-      font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px;
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; padding: 1px 6px; border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace; font-weight: 500; white-space: nowrap;
+    }
+    .s-custapi    { background: #e3f2fd; color: #0d47a1; }
+    .s-bhavin     { background: #fce4ec; color: #880e4f; }
+    .s-audit      { background: #f3e5f5; color: #4a148c; }
+    .s-counter    { background: #fff3e0; color: #bf360c; }
+    .s-perm       { background: #e8f5e9; color: #1b5e20; }
+    .s-put        { background: #e0f7fa; color: #006064; }
+    .s-tdev       { background: #f1f8e9; color: #33691e; }
+    .s-scanner    { background: #f5f5f5; color: #424242; border: 1px solid #e0e0e0; }
+    .s-juspay     { background: #fce4ec; color: #880e4f; }
+    .s-upi        { background: #e8eaf6; color: #283593; }
+    .s-cs         { background: #f5f5f5; color: #424242; border: 1px solid #e0e0e0; }
+    .s-be         { background: #fff8e1; color: #e65100; }
+    .s-partner    { background: #e8f5e9; color: #2e7d32; }
+
+    /* signal grid inside signal check node */
+    .sig-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .sig-card {
+      border: 1px solid #e8e8e8; border-radius: 5px; padding: 6px 8px;
+      font-size: 11px; min-width: 160px; flex: 1;
+    }
+    .sig-title { font-weight: 600; color: #333; margin-bottom: 4px; font-size: 11px; }
+    .sig-row { display: flex; gap: 5px; align-items: center; padding: 1px 0; font-size: 11px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-g { background: #4caf50; }
+    .dot-r { background: #ef5350; }
+    .dot-y { background: #bdbdbd; }
+
+    /* divider */
+    .section-div {
+      margin: 36px 0 20px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px; color: #aaa; display: flex; align-items: center; gap: 10px;
+    }
+    .section-div::after { content: ''; flex: 1; border-top: 1px solid #e0e0e0; }
+
+    /* auto-trigger side by side */
+    .auto-pair { display: flex; gap: 16px; align-items: flex-start; margin-top: 4px; }
+    .auto-col { flex: 1; }
+
+    /* open item callout */
+    .callout {
+      border-left: 3px solid #f9a825; background: #fff8e1;
+      border-radius: 4px; padding: 7px 11px; font-size: 12px; color: #444;
+      line-height: 1.5; margin-top: 8px; max-width: 600px;
     }
 
-    /* outcome rows */
-    .outcomes { display: flex; flex-direction: column; gap: 4px; margin-top: 7px; }
-    .outcome { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; }
-    .outcome-label {
-      font-weight: 600; font-size: 10px; padding: 2px 6px; border-radius: 3px;
-      flex-shrink: 0; margin-top: 1px;
-    }
-    .outcome-yes { background: #e8f5e9; color: #2e7d32; }
-    .outcome-no  { background: #ffebee; color: #c62828; }
-    .outcome-paths { background: #e3f2fd; color: #1565c0; }
-    .outcome-auto { background: #fff3e0; color: #e65100; }
-
-    .outcome-text { color: #444; line-height: 1.4; }
-    .outcome-stop {
-      display: inline-block; background: #ffebee; color: #c62828;
-      padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
-    }
-    .outcome-ok {
-      display: inline-block; background: #e8f5e9; color: #2e7d32;
-      padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
-    }
-
-    /* node type colours */
-    .type-fetch  { background: #e3f2fd; color: #1565c0; }
-    .type-guard  { background: #ffebee; color: #c62828; }
-    .type-signal { background: #fff3e0; color: #e65100; }
-    .type-action { background: #f3e5f5; color: #6a1b9a; }
-    .type-decide { background: #e8f0fe; color: #1a73e8; }
-    .type-process{ background: #e8f5e9; color: #2e7d32; }
-
-    .node-fetch  .node-head { border-left: 3px solid #1565c0; }
-    .node-guard  .node-head { border-left: 3px solid #c62828; }
-    .node-signal .node-head { border-left: 3px solid #e65100; }
-    .node-action .node-head { border-left: 3px solid #6a1b9a; }
-    .node-decide .node-head { border-left: 3px solid #1a73e8; }
-    .node-process .node-head { border-left: 3px solid #2e7d32; }
-
-    /* source badge colours */
-    .src-custapi    { background: #e3f2fd; color: #0d47a1; }
-    .src-bhavin     { background: #fce4ec; color: #880e4f; }
-    .src-auditdb    { background: #f3e5f5; color: #4a148c; }
-    .src-syscounter { background: #fff3e0; color: #bf360c; }
-    .src-hubperm    { background: #e8f5e9; color: #1b5e20; }
-    .src-put        { background: #e0f7fa; color: #006064; }
-    .src-tdevice    { background: #f1f8e9; color: #33691e; }
-    .src-scanner    { background: #fafafa; color: #424242; border: 1px solid #e0e0e0; }
-    .src-juspay     { background: #fce4ec; color: #c62828; }
-    .src-upistore   { background: #e8eaf6; color: #283593; }
-    .src-csinput    { background: #f5f5f5; color: #424242; border: 1px solid #e0e0e0; }
-    .src-bepod      { background: #fff8e1; color: #f57f17; }
-    .src-partnerpod { background: #e8f5e9; color: #1b5e20; }
-
-    /* signal grid */
-    .signal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 7px; }
-    .signal-card {
-      border: 1px solid #e8e8e8; border-radius: 5px; padding: 7px 9px; font-size: 11px;
-    }
-    .signal-card-title { font-weight: 600; color: #222; margin-bottom: 4px; font-size: 12px; }
-    .signal-values { display: flex; flex-direction: column; gap: 2px; }
-    .sig-v { display: flex; align-items: center; gap: 5px; }
-    .sig-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .sig-green { background: #4caf50; }
-    .sig-red   { background: #ef5350; }
-    .sig-gray  { background: #bdbdbd; }
-
-    /* UPI branch */
-    .branch-row { display: flex; gap: 12px; margin-top: 7px; }
-    .branch-box {
-      flex: 1; border: 1px solid #e8e8e8; border-radius: 5px; padding: 8px 10px; font-size: 12px;
-    }
-    .branch-box-title { font-weight: 600; margin-bottom: 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* auto-trigger grid */
-    .auto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .auto-card {
-      border: 1px solid #e8e8e8; border-radius: 8px; background: #fff; overflow: hidden;
-    }
-    .auto-card-head {
-      background: #f8f8f8; padding: 10px 14px; border-bottom: 1px solid #e8e8e8;
-      font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px;
-    }
-    .auto-ticket { font-size: 10px; font-family: 'JetBrains Mono', monospace; background: #e8e8e8; padding: 2px 6px; border-radius: 3px; color: #555; }
-    .auto-flow { padding: 12px 14px; }
-    .auto-step {
-      display: flex; align-items: flex-start; gap: 8px; padding: 6px 0;
-      border-bottom: 1px solid #f5f5f5; font-size: 12px;
-    }
-    .auto-step:last-child { border-bottom: none; }
-    .auto-step-num {
-      width: 20px; height: 20px; border-radius: 50%; background: rgb(217,0,141);
-      color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center;
-      justify-content: center; flex-shrink: 0; margin-top: 1px;
-    }
-    .auto-step-body { flex: 1; }
-    .auto-step-title { font-weight: 600; color: #111; margin-bottom: 3px; }
-
-    .rule-note {
-      background: #fff8e1; border-left: 3px solid #f9a825; border-radius: 4px;
-      padding: 7px 11px; font-size: 12px; color: #444; margin-top: 8px; line-height: 1.5;
-    }
-
-    .connector-label {
-      font-size: 11px; color: #aaa; text-align: center; padding: 2px 0 2px 0;
-      display: flex; align-items: center; gap: 6px; padding-left: 2px;
-    }
-    .connector-label::before { content: '↓'; color: #ccc; font-size: 14px; }
-
-    hr.divider { border: none; border-top: 1px solid #ebebeb; margin: 6px 0; }
+    /* legend */
+    .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+    .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #555; }
+    .leg-bar { width: 3px; height: 14px; border-radius: 2px; }
   </style>
 </head>
 <body>
-<div class="page">
 
-  <div class="page-title">Netbox Security Refund — System Flow Tree</div>
-  <div class="page-sub">Audience: Tech · Covers all paths: manual (CS-initiated) + auto-trigger · All data points and sources shown</div>
+  <h1>Netbox Security Refund — Decision Tree</h1>
+  <div class="subtitle">Audience: Tech · Manual flow + auto-trigger · All data points and sources shown</div>
 
-  <!-- Legend -->
   <div class="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div> Fetch / load</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div> Guard (blocking)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#e65100"></div> Signal check</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#6a1b9a"></div> CS action required</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#1a73e8"></div> Decision</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div> System process</div>
-    <div class="legend-item" style="margin-left:12px">
-      <span style="background:#e3f2fd;color:#0d47a1;font-size:10px;padding:1px 6px;border-radius:20px;font-family:monospace">badge</span> = data source
-    </div>
+    <div class="leg"><div class="leg-bar" style="background:rgb(217,0,141)"></div> Start</div>
+    <div class="leg"><div class="leg-bar" style="background:#c62828"></div> Guard (blocking check)</div>
+    <div class="leg"><div class="leg-bar" style="background:#e65100"></div> Signal check</div>
+    <div class="leg"><div class="leg-bar" style="background:#6a1b9a"></div> CS action</div>
+    <div class="leg"><div class="leg-bar" style="background:#1565c0"></div> Decision</div>
+    <div class="leg"><div class="leg-bar" style="background:#2e7d32"></div> System process</div>
+    <div class="leg"><div class="leg-bar" style="background:#ef9a9a"></div> Terminal — blocked</div>
+    <div class="leg"><div class="leg-bar" style="background:#81c784"></div> Terminal — success</div>
   </div>
 
-  <!-- ═══ MANUAL FLOW ═══ -->
-  <div class="section-label">Manual Flow — CS Initiated</div>
 
-  <div class="flow">
+  <!-- ═══════════════ MANUAL FLOW ═══════════════ -->
+  <div class="section-div">Manual Flow — CS Initiated</div>
 
-    <!-- FETCH -->
-    <div class="node">
-      <div class="node-body node-fetch">
-        <div class="node-head">
-          <span class="node-type type-fetch">Fetch</span>
-          <span class="node-title">Load customer data on tab open</span>
-        </div>
-        <div class="node-content">
-          <div style="color:#555;font-size:12px;margin-bottom:4px;">All checks below depend on this data being fetched first:</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12px;">
-            <div>• Customer segment (PayG / Migrated PayG / Legacy)</div>
-            <div>• Refund eligibility + amount for this segment</div>
-            <div>• Existing refund record for this <code style="font-size:11px">user_account_id</code></div>
-            <div>• Daily refund counter (txns + Rs total today)</div>
-            <div>• UPI on record for this customer</div>
-            <div>• Juspay payment source validity</div>
-          </div>
-          <div class="sources">
-            <span class="src src-custapi">Customer API — segment</span>
-            <span class="src src-bhavin">Eligibility Config — Bhavin (TBD)</span>
-            <span class="src src-auditdb">Audit Trail DB — refund record</span>
-            <span class="src src-syscounter">System Counter — daily cap</span>
-            <span class="src src-upistore">UPI Store — submitted UPI</span>
-            <span class="src src-juspay">Juspay — source validity</span>
-          </div>
+  <div class="tree">
+
+    <!-- ROOT -->
+    <div class="node n-root">
+      <div class="node-head">
+        <span class="node-badge">Start</span>
+        <span class="node-title">Customer calls CS for Netbox Security Deposit Refund</span>
+      </div>
+      <div class="node-body">
+        <div class="node-desc">CS opens Customer Details → Netbox Security Refund tab in Wiom Hub. System loads all required data on tab open.</div>
+        <div class="srcs">
+          <span class="src s-custapi">Customer API — segment</span>
+          <span class="src s-bhavin">Eligibility config — Bhavin</span>
+          <span class="src s-audit">Audit Trail DB — existing refund</span>
+          <span class="src s-counter">System counter — daily cap</span>
+          <span class="src s-upi">UPI Store — submitted UPI</span>
+          <span class="src s-juspay">Juspay — source validity</span>
         </div>
       </div>
     </div>
 
-    <div class="connector-label">all fetched</div>
+    <div class="branch-down">
 
-    <!-- G3: Role -->
-    <div class="node">
-      <div class="node-body node-guard">
-        <div class="node-head">
-          <span class="node-type type-guard">Guard G3</span>
-          <span class="node-title">Agent has CUSTOMER_MODULE_NETBOX_SECURITY_REFUND permission?</span>
-        </div>
-        <div class="node-content">
-          <div class="sources"><span class="src src-hubperm">Hub Permission System</span></div>
-          <div class="outcomes">
-            <div class="outcome"><span class="outcome-label outcome-no">NO</span><span class="outcome-text">→ <span class="outcome-stop">STOP</span> Tab visible, all CTAs disabled. Access-denied state shown.</span></div>
-            <div class="outcome"><span class="outcome-label outcome-yes">YES</span><span class="outcome-text">→ proceed to next check</span></div>
+      <!-- G3 -->
+      <div class="branch-item">
+        <div class="node n-guard">
+          <div class="node-head">
+            <span class="node-badge">Guard G3</span>
+            <span class="node-title">Agent has CUSTOMER_MODULE_NETBOX_SECURITY_REFUND permission?</span>
+          </div>
+          <div class="node-body">
+            <div class="srcs"><span class="src s-perm">Hub Permission System</span></div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="connector-label">permitted</div>
-
-    <!-- G0: Eligibility -->
-    <div class="node">
-      <div class="node-body node-guard">
-        <div class="node-head">
-          <span class="node-type type-guard">Guard G0</span>
-          <span class="node-title">Is this customer eligible for a refund?</span>
-        </div>
-        <div class="node-content">
-          <div style="font-size:12px;color:#555;margin-bottom:5px;">Three segments — eligibility and amount per segment defined by Bhavin (TBD):</div>
-          <div style="font-size:12px;display:flex;gap:16px;flex-wrap:wrap;">
-            <span>• <strong>PayG</strong> — post-26 Jan install</span>
-            <span>• <strong>Migrated PayG</strong> — pre-26 Jan, on new app</span>
-            <span>• <strong>Legacy</strong> — still on old app</span>
+        <div class="branch-down">
+          <div class="branch-item">
+            <div class="branch-label bl-no">NO</div>
+            <div class="node n-stop">
+              <div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Access denied — tab visible, all CTAs disabled</span></div>
+            </div>
           </div>
-          <div class="sources">
-            <span class="src src-custapi">Customer API — segment</span>
-            <span class="src src-bhavin">Eligibility Config — Bhavin (TBD)</span>
-            <span class="src src-bhavin">Refund Amount — Bhavin (TBD)</span>
-          </div>
-          <div class="outcomes">
-            <div class="outcome"><span class="outcome-label outcome-no">NO</span><span class="outcome-text">→ <span class="outcome-stop">STOP</span> Info alert: not eligible. No CTAs. <strong>No WA link sent.</strong> UPI collection must not be triggered for ineligible customers.</span></div>
-            <div class="outcome"><span class="outcome-label outcome-yes">YES</span><span class="outcome-text">→ proceed (refund amount now known)</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="connector-label">eligible</div>
+          <div class="branch-item">
+            <div class="branch-label bl-yes">YES</div>
 
-    <!-- G2: Already refunded -->
-    <div class="node">
-      <div class="node-body node-guard">
-        <div class="node-head">
-          <span class="node-type type-guard">Guard G2</span>
-          <span class="node-title">Has a successful refund already been processed for this customer?</span>
-        </div>
-        <div class="node-content">
-          <div style="font-size:12px;color:#555;margin-bottom:4px;">Cap = 1 refund per <code style="font-size:11px">user_account_id</code>. System + manual combined. Only successful refunds count — failures do not.</div>
-          <div class="sources"><span class="src src-auditdb">Audit Trail DB — keyed on user_account_id</span></div>
-          <div class="outcomes">
-            <div class="outcome"><span class="outcome-label outcome-no">YES</span><span class="outcome-text">→ <span class="outcome-stop">STOP</span> Read-only view: txn ID, amount, method, refunded to, status, processed at.</span></div>
-            <div class="outcome"><span class="outcome-label outcome-yes">NO</span><span class="outcome-text">→ proceed</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="connector-label">not yet refunded</div>
-
-    <!-- G1: Daily cap -->
-    <div class="node">
-      <div class="node-body node-guard">
-        <div class="node-head">
-          <span class="node-type type-guard">Guard G1</span>
-          <span class="node-title">Daily global cap reached?</span>
-        </div>
-        <div class="node-content">
-          <div style="font-size:12px;color:#555;margin-bottom:4px;">Cap: <strong>5 transactions/day</strong> OR <strong>₹1,500/day</strong> — whichever hits first. Both configurable. Resets midnight IST. Jaivin (Product) alerted on breach.</div>
-          <div class="sources"><span class="src src-syscounter">System Counter — configurable config</span></div>
-          <div class="outcomes">
-            <div class="outcome"><span class="outcome-label outcome-no">YES</span><span class="outcome-text">→ <span class="outcome-stop">STOP</span> Blocking error. No CTAs. Resets at midnight.</span></div>
-            <div class="outcome"><span class="outcome-label outcome-yes">NO</span><span class="outcome-text">→ proceed</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="connector-label">within limits</div>
-
-    <!-- Signal check -->
-    <div class="node">
-      <div class="node-body node-signal">
-        <div class="node-head">
-          <span class="node-type type-signal">Signal Check</span>
-          <span class="node-title">At least one device return signal must be confirmed</span>
-        </div>
-        <div class="node-content">
-          <div class="rule-note">Rule: at least 1 of the 5 eligible signals below must be true. If none are met, refund cannot proceed.</div>
-          <div class="signal-grid" style="margin-top:10px;">
-            <div class="signal-card">
-              <div class="signal-card-title">PUT Status</div>
-              <div class="signal-values">
-                <div class="sig-v"><span class="sig-dot sig-green"></span><span>Resolved — router_recovered ✓</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>Resolved — other reason ✗</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>Open ✗</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>Not created ✗</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>Expired ✗</span></div>
+            <!-- G0 -->
+            <div class="node n-guard">
+              <div class="node-head">
+                <span class="node-badge">Guard G0</span>
+                <span class="node-title">Is this customer eligible for a refund? (segment check)</span>
               </div>
-              <div class="sources" style="margin-top:6px;"><span class="src src-put">PUT System — CX-1094</span></div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-card-title">Device Status (t_device)</div>
-              <div class="signal-values">
-                <div class="sig-v"><span class="sig-dot sig-green"></span><span>IN_WAREHOUSE ✓</span></div>
-                <div class="sig-v"><span class="sig-dot sig-green"></span><span>IDLE (at partner) ✓</span></div>
-                <div class="sig-v"><span class="sig-dot sig-green"></span><span>INSTALLED, diff account ✓</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>INSTALLED, same account ✗</span></div>
-                <div class="sig-v"><span class="sig-dot sig-gray"></span><span>LOST — CS to assess</span></div>
-              </div>
-              <div class="sources" style="margin-top:6px;"><span class="src src-tdevice">t_device — CX-1098</span></div>
-            </div>
-            <div class="signal-card">
-              <div class="signal-card-title">Global Scanner</div>
-              <div class="signal-values">
-                <div class="sig-v"><span class="sig-dot sig-green"></span><span>Scanned at partner after last recharge ✓</span></div>
-                <div class="sig-v"><span class="sig-dot sig-red"></span><span>No scan record ✗</span></div>
-              </div>
-              <div style="font-size:11px;color:#777;margin-top:5px;">Returns: partner_id, scan date, photo. Hub-only — not shown in partner app.</div>
-              <div class="sources" style="margin-top:6px;"><span class="src src-scanner">Scanner System — CX-1095</span></div>
-            </div>
-          </div>
-          <div class="outcomes" style="margin-top:10px;">
-            <div class="outcome"><span class="outcome-label outcome-no">NONE</span><span class="outcome-text">→ Action needed banner shown. PUT not created → raise PUT. PUT open → wait for resolution or get scanner scan.</span></div>
-            <div class="outcome"><span class="outcome-label outcome-yes">≥1 GREEN</span><span class="outcome-text">→ proceed to checklist</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="connector-label">signal confirmed</div>
-
-    <!-- Pre-action checklist -->
-    <div class="node">
-      <div class="node-body node-action">
-        <div class="node-head">
-          <span class="node-type type-action">CS Action</span>
-          <span class="node-title">Complete pre-action checklist — all 3 required before any CTA unlocks</span>
-        </div>
-        <div class="node-content">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;margin-bottom:6px;">
-            <div style="border:1px solid #e8e8e8;border-radius:5px;padding:7px;">
-              <div style="font-weight:600;margin-bottom:3px;">① Reason (dropdown)</div>
-              <div style="color:#666;font-size:11px;">
-                PUT resolved — router recovered<br>
-                Device at Wiom warehouse<br>
-                Device at partner (IDLE)<br>
-                Device at another customer<br>
-                Global Scanner confirmed<br>
-                3PL pickup confirmed<br>
-                Others
-              </div>
-            </div>
-            <div style="border:1px solid #e8e8e8;border-radius:5px;padding:7px;">
-              <div style="font-weight:600;margin-bottom:3px;">② Remarks (text)</div>
-              <div style="color:#666;font-size:11px;">Free text. Min 5 characters. Stored in audit trail alongside selected reason.</div>
-            </div>
-            <div style="border:1px solid #e8e8e8;border-radius:5px;padding:7px;">
-              <div style="font-weight:600;margin-bottom:3px;">③ Proof (upload)</div>
-              <div style="color:#666;font-size:11px;">Screenshot of device location confirmation or CS conversation. Filename stored in audit trail.</div>
-            </div>
-          </div>
-          <div class="sources"><span class="src src-csinput">CS Input — reason + remarks + proof</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="connector-label">checklist complete</div>
-
-    <!-- UPI decision -->
-    <div class="node">
-      <div class="node-body node-decide">
-        <div class="node-head">
-          <span class="node-type type-decide">Decision</span>
-          <span class="node-title">Does customer have a UPI on record?</span>
-        </div>
-        <div class="node-content">
-          <div class="sources"><span class="src src-upistore">UPI Store — submitted via app or captive portal</span></div>
-          <div class="branch-row" style="margin-top:10px;">
-
-            <div class="branch-box" style="border-color:#a5d6a7;">
-              <div class="branch-box-title" style="color:#2e7d32;">YES — UPI on record</div>
-              <div style="font-size:12px;color:#444;">
-                Show UPI chip (e.g. ramesh@okaxis).<br>
-                CTA: <strong>Process Refund</strong> → confirm dialog (UPI + amount) → initiate Juspay payout.
-              </div>
-              <div class="sources" style="margin-top:6px;">
-                <span class="src src-juspay">Juspay payout API</span>
-                <span class="src src-bhavin">Refund amount — Bhavin config</span>
-              </div>
-            </div>
-
-            <div class="branch-box" style="border-color:#90caf9;">
-              <div class="branch-box-title" style="color:#1565c0;">NO — No UPI submitted</div>
-              <div style="font-size:12px;color:#444;margin-bottom:6px;">Check Juspay source validity (~6 months from original payment):</div>
-              <div style="display:flex;flex-direction:column;gap:5px;">
-                <div style="border:1px solid #e8e8e8;border-radius:4px;padding:6px 8px;font-size:12px;">
-                  <strong>Source valid:</strong> Show "Original payment source" badge (no instrument details — Juspay constraint). CTA: <em>Refund to Source</em> OR <em>Send WA link</em>.
-                  <div class="sources" style="margin-top:4px;"><span class="src src-juspay">Juspay source validity</span></div>
-                </div>
-                <div style="border:1px solid #e8e8e8;border-radius:4px;padding:6px 8px;font-size:12px;">
-                  <strong>Source expired / unavailable:</strong> Source option disabled. CTA: <em>Send WA link only</em>.
+              <div class="node-body">
+                <div class="node-desc">Three segments — eligibility and refund amount per segment defined by Bhavin (TBD). PayG (post-26 Jan) · Migrated PayG (pre-26 Jan, new app) · Legacy (old app). Critical: do not trigger UPI collection for ineligible customers.</div>
+                <div class="srcs">
+                  <span class="src s-custapi">Customer API — segment</span>
+                  <span class="src s-bhavin">Eligibility config — Bhavin (TBD)</span>
+                  <span class="src s-bhavin">Refund amount — Bhavin (TBD)</span>
                 </div>
               </div>
             </div>
 
+            <div class="branch-down">
+              <div class="branch-item">
+                <div class="branch-label bl-no">NO</div>
+                <div class="node n-stop">
+                  <div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Not eligible — info alert shown, no CTAs, no WA link sent</span></div>
+                </div>
+              </div>
+
+              <div class="branch-item">
+                <div class="branch-label bl-yes">YES (+ amount known)</div>
+
+                <!-- G2 -->
+                <div class="node n-guard">
+                  <div class="node-head">
+                    <span class="node-badge">Guard G2</span>
+                    <span class="node-title">Has a successful refund already been processed for this user_account_id?</span>
+                  </div>
+                  <div class="node-body">
+                    <div class="node-desc">Cap = 1 per user_account_id (not mobile). System + manual combined. Only successful refunds count.</div>
+                    <div class="srcs"><span class="src s-audit">Audit Trail DB — keyed on user_account_id</span></div>
+                  </div>
+                </div>
+
+                <div class="branch-down">
+                  <div class="branch-item">
+                    <div class="branch-label bl-no">YES</div>
+                    <div class="node n-stop">
+                      <div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Already refunded — read-only view: txn ID, amount, method, refunded to, status, date</span></div>
+                    </div>
+                  </div>
+
+                  <div class="branch-item">
+                    <div class="branch-label bl-yes">NO</div>
+
+                    <!-- G1 -->
+                    <div class="node n-guard">
+                      <div class="node-head">
+                        <span class="node-badge">Guard G1</span>
+                        <span class="node-title">Daily global cap reached?</span>
+                      </div>
+                      <div class="node-body">
+                        <div class="node-desc">5 transactions/day OR ₹1,500/day — whichever hits first. Both configurable. Resets midnight IST. Jaivin (Product) alerted on breach.</div>
+                        <div class="srcs"><span class="src s-counter">System counter — configurable config</span></div>
+                      </div>
+                    </div>
+
+                    <div class="branch-down">
+                      <div class="branch-item">
+                        <div class="branch-label bl-no">YES</div>
+                        <div class="node n-stop">
+                          <div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Daily limit reached — blocked until midnight reset</span></div>
+                        </div>
+                      </div>
+
+                      <div class="branch-item">
+                        <div class="branch-label bl-yes">NO</div>
+
+                        <!-- SIGNAL CHECK -->
+                        <div class="node n-signal">
+                          <div class="node-head">
+                            <span class="node-badge">Signal Check</span>
+                            <span class="node-title">At least 1 of 5 eligible signals must be confirmed (CS reviews diagnostic view)</span>
+                          </div>
+                          <div class="node-body">
+                            <div class="sig-grid">
+                              <div class="sig-card">
+                                <div class="sig-title">PUT Status</div>
+                                <div class="sig-row"><span class="dot dot-g"></span>Resolved — router_recovered ✓</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>Resolved — other reason ✗</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>Open ✗</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>Not created ✗</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>Expired ✗</div>
+                                <div class="srcs" style="margin-top:5px;"><span class="src s-put">PUT System — CX-1094</span></div>
+                              </div>
+                              <div class="sig-card">
+                                <div class="sig-title">Device Status (t_device)</div>
+                                <div class="sig-row"><span class="dot dot-g"></span>IN_WAREHOUSE ✓</div>
+                                <div class="sig-row"><span class="dot dot-g"></span>IDLE (at partner) ✓</div>
+                                <div class="sig-row"><span class="dot dot-g"></span>INSTALLED, diff account ✓</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>INSTALLED, same account ✗</div>
+                                <div class="sig-row"><span class="dot dot-y"></span>LOST — CS to assess</div>
+                                <div class="srcs" style="margin-top:5px;"><span class="src s-tdev">t_device — CX-1098</span></div>
+                              </div>
+                              <div class="sig-card">
+                                <div class="sig-title">Global Scanner</div>
+                                <div class="sig-row"><span class="dot dot-g"></span>Scanned after last recharge ✓</div>
+                                <div class="sig-row"><span class="dot dot-r"></span>No record / before recharge ✗</div>
+                                <div style="font-size:10px;color:#888;margin-top:4px;">Returns: partner_id, date, photo. Hub-only.</div>
+                                <div class="srcs" style="margin-top:5px;"><span class="src s-scanner">Scanner System — CX-1095</span></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="branch-down">
+                          <div class="branch-item">
+                            <div class="branch-label bl-none">NONE GREEN</div>
+                            <div class="node n-stop">
+                              <div class="node-head"><span class="node-badge">Action Needed</span><span class="node-title">No confirmed signal — PUT not created → raise PUT · PUT open → wait for resolution or get scanner scan</span></div>
+                            </div>
+                          </div>
+
+                          <div class="branch-item">
+                            <div class="branch-label bl-yes">≥ 1 GREEN</div>
+
+                            <!-- CS CHECKLIST -->
+                            <div class="node n-action">
+                              <div class="node-head">
+                                <span class="node-badge">CS Action</span>
+                                <span class="node-title">Complete pre-action checklist — all 3 required before any CTA unlocks</span>
+                              </div>
+                              <div class="node-body">
+                                <div class="node-desc">① Reason (dropdown — 7 options) &nbsp;·&nbsp; ② Remarks (text, min 5 chars) &nbsp;·&nbsp; ③ Screenshot proof (upload). All three stored in audit trail.</div>
+                                <div class="srcs"><span class="src s-cs">CS Input — reason + remarks + proof upload</span></div>
+                              </div>
+                            </div>
+
+                            <div class="branch-down">
+                              <div class="branch-item">
+                                <div class="branch-label bl-yes">COMPLETE</div>
+
+                                <!-- UPI DECISION -->
+                                <div class="node n-decide">
+                                  <div class="node-head">
+                                    <span class="node-badge">Decision</span>
+                                    <span class="node-title">Does customer have a UPI on record?</span>
+                                  </div>
+                                  <div class="node-body">
+                                    <div class="srcs"><span class="src s-upi">UPI Store — submitted via app or captive portal</span></div>
+                                  </div>
+                                </div>
+
+                                <div class="branch-down">
+
+                                  <!-- PATH A: UPI exists -->
+                                  <div class="branch-item">
+                                    <div class="branch-label bl-a">YES — UPI on record</div>
+                                    <div class="node n-process">
+                                      <div class="node-head">
+                                        <span class="node-badge">Process</span>
+                                        <span class="node-title">Process refund directly — UPI chip shown (e.g. ramesh@okaxis)</span>
+                                      </div>
+                                      <div class="node-body">
+                                        <div class="node-desc">CTA: Process Refund → confirm dialog (UPI + amount) → initiate Juspay payout.</div>
+                                        <div class="srcs">
+                                          <span class="src s-juspay">Juspay payout API</span>
+                                          <span class="src s-bhavin">Refund amount — Bhavin config</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <!-- PATH B: No UPI -->
+                                  <div class="branch-item">
+                                    <div class="branch-label bl-b">NO — No UPI submitted</div>
+                                    <div class="node n-decide">
+                                      <div class="node-head">
+                                        <span class="node-badge">Decision</span>
+                                        <span class="node-title">Is Juspay original payment source still valid? (~6 months from payment)</span>
+                                      </div>
+                                      <div class="node-body">
+                                        <div class="srcs"><span class="src s-juspay">Juspay — source validity check</span></div>
+                                      </div>
+                                    </div>
+
+                                    <div class="branch-down">
+                                      <div class="branch-item">
+                                        <div class="branch-label bl-yes">YES — Source valid</div>
+                                        <div class="node n-decide">
+                                          <div class="node-head">
+                                            <span class="node-badge">CS Choice</span>
+                                            <span class="node-title">"Original payment source" badge shown — CS chooses: Refund to Source OR Send WA link</span>
+                                          </div>
+                                          <div class="node-body">
+                                            <div class="node-desc">Note: instrument details not visible (Juspay constraint) — refund reaches same account customer paid from.</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div class="branch-item">
+                                        <div class="branch-label bl-no">NO — Source expired</div>
+                                        <div class="node n-decide">
+                                          <div class="node-head">
+                                            <span class="node-badge">Only Option</span>
+                                            <span class="node-title">Send WA link — source option disabled</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                </div><!-- /upi branch-down -->
+
+                                <!-- WA LINK SUB-FLOW -->
+                                <div class="branch-item" style="margin-top:12px;">
+                                  <div class="branch-label bl-c">WA LINK PATH</div>
+                                  <div class="node n-action">
+                                    <div class="node-head">
+                                      <span class="node-badge">Sub-flow</span>
+                                      <span class="node-title">CS sends WA link → Captive portal → customer submits UPI → auto-initiate payout</span>
+                                    </div>
+                                    <div class="node-body">
+                                      <div class="node-desc">Hub fires Clevertap event → WA delivers dynamic portal link (TTL 30 min). Customer: Landing → OTP verify (3 retries, TTL TBD) → UPI entry → UPI confirm → refund triggered. Link expired: CS regenerates, old link invalidated.</div>
+                                      <div class="srcs">
+                                        <span class="src s-custapi">OTP infra — Customer team</span>
+                                        <span class="src s-upi">UPI stored on portal submit</span>
+                                        <span class="src s-juspay">Juspay payout API</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                              </div>
+                            </div><!-- /checklist branch-down -->
+
+                          </div>
+                        </div><!-- /signal branch-down -->
+
+                      </div>
+                    </div><!-- /G1 branch-down -->
+
+                  </div>
+                </div><!-- /G2 branch-down -->
+
+              </div>
+            </div><!-- /G0 branch-down -->
+
+          </div>
+        </div><!-- /G3 branch-down -->
+
+      </div>
+    </div><!-- /root branch-down -->
+
+    <!-- JUSPAY PAYOUT — shared terminal -->
+    <div style="margin-top:12px;padding-left:20px;border-left:2px dashed #c8e6c9;margin-left:18px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#aaa;margin-bottom:6px;padding-left:22px;">All paths converge → Juspay Payout</div>
+      <div class="branch-item">
+        <div class="node n-process">
+          <div class="node-head">
+            <span class="node-badge">Process</span>
+            <span class="node-title">Juspay payout — poll for status</span>
+          </div>
+          <div class="node-body">
+            <div class="srcs" style="margin-bottom:6px;">
+              <span class="src s-juspay">Juspay payout API</span>
+              <span class="src s-audit">Audit Trail DB — write</span>
+            </div>
+            <div class="node-desc"><strong>Audit fields:</strong> user_account_id · device_id · initiated_by (agent ID) · initiated_at · reason · remarks · proof filename · method · amount · juspay_txn_id · status · updated_at</div>
+          </div>
+        </div>
+        <div class="branch-down">
+          <div class="branch-item">
+            <div class="branch-label bl-yes">SUCCESS</div>
+            <div class="node n-ok">
+              <div class="node-head"><span class="node-badge">Done</span><span class="node-title">Success screen · Submission card shown (reason + remarks + proof) · WA confirmation sent · Per-customer counter incremented · ETA 3–5 days</span></div>
+            </div>
+          </div>
+          <div class="branch-item">
+            <div class="branch-label bl-no">FAILURE</div>
+            <div class="node n-stop">
+              <div class="node-head"><span class="node-badge">Failed</span><span class="node-title">Failure state — CS can retry · Counter not incremented · Logged in audit trail</span></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="connector-label">refund initiated</div>
+  </div><!-- /tree -->
 
-    <!-- WA link sub-flow -->
-    <div class="node">
-      <div class="node-body node-decide" style="border-color:#90caf9;">
-        <div class="node-head" style="border-left-color:#1a73e8;">
-          <span class="node-type type-decide">Sub-flow</span>
-          <span class="node-title">WA link sent → Captive portal (archived customers only)</span>
+
+  <!-- ═══════════════ AUTO-TRIGGER ═══════════════ -->
+  <div class="section-div">Auto-Trigger Paths — System Initiated (No Daily Cap · Per-Customer Cap Still Applies)</div>
+
+  <div class="auto-pair">
+
+    <!-- PATH A -->
+    <div class="auto-col">
+      <div class="node n-signal" style="max-width:none;">
+        <div class="node-head">
+          <span class="node-badge">Auto Path A</span>
+          <span class="node-title">Device confirmed at Wiom warehouse</span>
+          <span style="margin-left:auto;font-size:10px;font-family:monospace;background:#e8e8e8;padding:1px 6px;border-radius:3px;color:#555;white-space:nowrap;">BE-1584 · CX-1102</span>
         </div>
-        <div class="node-content">
-          <div style="font-size:12px;color:#555;margin-bottom:6px;">CS sends WA link from Hub → Clevertap fires WhatsApp with dynamic portal URL.</div>
-          <div style="display:flex;gap:8px;font-size:12px;">
-            <div style="flex:1;border:1px solid #e8e8e8;border-radius:4px;padding:7px;">
-              <strong>Portal steps:</strong> Landing → OTP verify → UPI entry → UPI confirm → refund auto-initiated → success screen
-              <div class="sources" style="margin-top:4px;">
-                <span class="src src-custapi">OTP infra — Customer team</span>
-                <span class="src src-upistore">UPI stored on submit</span>
+        <div class="node-body">
+          <div class="node-desc">BE pod detects t_device.status → IN_WAREHOUSE and signals Customer pod.</div>
+          <div class="srcs"><span class="src s-tdev">t_device — BE pod detects (BE-1584)</span></div>
+        </div>
+      </div>
+      <div class="branch-down">
+        <div class="branch-item">
+          <div class="node n-guard">
+            <div class="node-head"><span class="node-badge">G0</span><span class="node-title">Customer eligible?</span></div>
+            <div class="node-body"><div class="srcs"><span class="src s-custapi">Customer API</span><span class="src s-bhavin">Eligibility config</span></div></div>
+          </div>
+          <div class="branch-down">
+            <div class="branch-item"><div class="branch-label bl-no">NO</div><div class="node n-stop"><div class="node-head"><span class="node-badge">Stop</span><span class="node-title">No action</span></div></div></div>
+            <div class="branch-item">
+              <div class="branch-label bl-yes">YES</div>
+              <div class="node n-guard">
+                <div class="node-head"><span class="node-badge">G2 + Conflict</span><span class="node-title">Already refunded OR CS refund in progress for this user_account_id?</span></div>
+                <div class="node-body"><div class="srcs"><span class="src s-audit">Audit Trail DB</span></div></div>
+              </div>
+              <div class="branch-down">
+                <div class="branch-item"><div class="branch-label bl-no">YES (either)</div><div class="node n-stop"><div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Skip — do not fire. Log.</span></div></div></div>
+                <div class="branch-item">
+                  <div class="branch-label bl-yes">NO</div>
+                  <div class="node n-decide">
+                    <div class="node-head"><span class="node-badge">Decision</span><span class="node-title">UPI on record?</span></div>
+                    <div class="node-body"><div class="srcs"><span class="src s-upi">UPI Store</span></div></div>
+                  </div>
+                  <div class="branch-down">
+                    <div class="branch-item"><div class="branch-label bl-no">NO</div><div class="node n-stop"><div class="node-head"><span class="node-badge">No action</span><span class="node-title">No-UPI fallback — TBD with Bhavin</span></div></div></div>
+                    <div class="branch-item">
+                      <div class="branch-label bl-yes">YES</div>
+                      <div class="node n-process">
+                        <div class="node-head"><span class="node-badge">Process</span><span class="node-title">Juspay payout · initiated_by = system · trigger = warehouse_confirmed</span></div>
+                        <div class="node-body"><div class="srcs"><span class="src s-juspay">Juspay</span><span class="src s-bhavin">Amount</span><span class="src s-audit">Audit Trail</span></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div style="flex:0 0 180px;border:1px solid #ffccbc;border-radius:4px;padding:7px;background:#fff8f5;font-size:11px;">
-              <strong>TTL rules:</strong><br>
-              Link: 30 min. CS regenerates if expired.<br>
-              OTP: TTL TBD (Customer team). 3 retries per active link.<br>
-              1 UPI submission per link.
-            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="connector-label">payout triggered</div>
-
-    <!-- Juspay payout -->
-    <div class="node">
-      <div class="node-body node-process">
+    <!-- PATH B -->
+    <div class="auto-col">
+      <div class="node n-signal" style="max-width:none;">
         <div class="node-head">
-          <span class="node-type type-process">Process</span>
-          <span class="node-title">Juspay payout → poll for status</span>
+          <span class="node-badge">Auto Path B</span>
+          <span class="node-title">Device re-installed at new customer (PUT: device_reinstalled)</span>
+          <span style="margin-left:auto;font-size:10px;font-family:monospace;background:#e8e8e8;padding:1px 6px;border-radius:3px;color:#555;white-space:nowrap;">PARTNER-5380 · CX-1103</span>
         </div>
-        <div class="node-content">
-          <div class="sources" style="margin-bottom:8px;">
-            <span class="src src-juspay">Juspay payout API</span>
-            <span class="src src-auditdb">Audit Trail DB — write</span>
+        <div class="node-body">
+          <div class="node-desc">Partner installs device at new customer → system auto-resolves original customer's PUT with resolution_type = device_reinstalled (new type, separate from router_recovered / customer_recovered — name TBD with Partner pod). Customer pod listens for this event.</div>
+          <div class="srcs">
+            <span class="src s-partner">Partner pod — PARTNER-5380</span>
+            <span class="src s-put">PUT System</span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
-            <div style="border:1px solid #a5d6a7;border-radius:4px;padding:7px;background:#f1f8f1;">
-              <strong style="color:#2e7d32;">SUCCESS</strong><br>
-              Success screen shown. Submission card (reason + remarks + proof) visible. WA notification sent to customer. Per-customer counter incremented.
+        </div>
+      </div>
+      <div class="branch-down">
+        <div class="branch-item">
+          <div class="node n-guard">
+            <div class="node-head"><span class="node-badge">G0</span><span class="node-title">Customer eligible? (user_account_id from PUT ticket = original customer)</span></div>
+            <div class="node-body"><div class="srcs"><span class="src s-custapi">Customer API</span><span class="src s-bhavin">Eligibility config</span></div></div>
+          </div>
+          <div class="branch-down">
+            <div class="branch-item"><div class="branch-label bl-no">NO</div><div class="node n-stop"><div class="node-head"><span class="node-badge">Stop</span><span class="node-title">No action</span></div></div></div>
+            <div class="branch-item">
+              <div class="branch-label bl-yes">YES</div>
+              <div class="node n-guard">
+                <div class="node-head"><span class="node-badge">G2 + Conflict</span><span class="node-title">Already refunded OR CS refund in progress?</span></div>
+                <div class="node-body"><div class="srcs"><span class="src s-audit">Audit Trail DB</span></div></div>
+              </div>
+              <div class="branch-down">
+                <div class="branch-item"><div class="branch-label bl-no">YES (either)</div><div class="node n-stop"><div class="node-head"><span class="node-badge">Stop</span><span class="node-title">Skip — do not fire. Log.</span></div></div></div>
+                <div class="branch-item">
+                  <div class="branch-label bl-yes">NO</div>
+                  <div class="node n-decide">
+                    <div class="node-head"><span class="node-badge">Decision</span><span class="node-title">UPI on record?</span></div>
+                    <div class="node-body"><div class="srcs"><span class="src s-upi">UPI Store</span></div></div>
+                  </div>
+                  <div class="branch-down">
+                    <div class="branch-item"><div class="branch-label bl-no">NO</div><div class="node n-stop"><div class="node-head"><span class="node-badge">No action</span><span class="node-title">No-UPI fallback — TBD with Bhavin</span></div></div></div>
+                    <div class="branch-item">
+                      <div class="branch-label bl-yes">YES</div>
+                      <div class="node n-process">
+                        <div class="node-head"><span class="node-badge">Process</span><span class="node-title">Juspay payout · initiated_by = system · trigger = put_device_reinstalled</span></div>
+                        <div class="node-body"><div class="srcs"><span class="src s-juspay">Juspay</span><span class="src s-bhavin">Amount</span><span class="src s-audit">Audit Trail</span></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="border:1px solid #ffccbc;border-radius:4px;padding:7px;background:#fff8f5;">
-              <strong style="color:#c62828;">FAILURE</strong><br>
-              Failure state shown. Flow resets — CS can retry. No counter increment. Logged in audit trail.
-            </div>
-          </div>
-          <div style="margin-top:8px;font-size:12px;">
-            <strong>Audit trail fields written:</strong> user_account_id, device_id, initiated_by (agent ID), initiated_at, reason, remarks, proof filename, method (manual_upi / source / captive_portal), amount, juspay_txn_id, status, updated_at
-          </div>
-          <div style="margin-top:6px;font-size:12px;">
-            <strong>ETA to customer:</strong> 3–5 days · Sent via WhatsApp on initiation + on completion
           </div>
         </div>
       </div>
     </div>
 
-  </div><!-- /flow -->
+  </div><!-- /auto-pair -->
 
-
-  <!-- ═══ AUTO-TRIGGER PATHS ═══ -->
-  <div class="section-label">Auto-Trigger Paths — System Initiated (No Daily Cap)</div>
-
-  <div class="rule-note" style="margin-bottom:16px;">
-    Auto-trigger fires when Wiom has <strong>strongest-signal confirmation</strong> of device return. No CS action needed. No daily cap. Per-customer cap (1 success) still applies. Conflict guard: if CS has already initiated a refund for this <code>user_account_id</code>, auto-trigger does not fire.
+  <div class="callout">
+    <strong>Open — both auto paths:</strong> No-UPI fallback when device return is confirmed but customer has no UPI. What happens today when PUT closes (router_recovered) with no UPI? Check with Bhavin — auto-trigger paths follow the same rule once defined.
   </div>
 
-  <div class="auto-grid">
-
-    <!-- Path A -->
-    <div class="auto-card">
-      <div class="auto-card-head">
-        Path A — Device confirmed at Wiom warehouse
-        <span class="auto-ticket">BE-1584 + CX-1102</span>
-      </div>
-      <div class="auto-flow">
-        <div class="auto-step">
-          <div class="auto-step-num">1</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Trigger: t_device.status flips to IN_WAREHOUSE</div>
-            <div class="sources"><span class="src src-tdevice">t_device — BE pod detects (BE-1584)</span></div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">2</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">G0: Customer eligible for refund?</div>
-            <div class="sources"><span class="src src-custapi">Customer API</span><span class="src src-bhavin">Eligibility Config — Bhavin</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">NO → no action</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">3</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">G2: Already refunded (user_account_id)?</div>
-            <div class="sources"><span class="src src-auditdb">Audit Trail DB</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">YES → no action, log</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">4</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Conflict: CS refund currently in progress?</div>
-            <div class="sources"><span class="src src-auditdb">Audit Trail DB — processing state</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">YES → skip, do not fire</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">5</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">UPI on record?</div>
-            <div class="sources"><span class="src src-upistore">UPI Store</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">NO → no action (no-UPI flow TBD with Bhavin)</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">6</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Initiate Juspay payout · initiated_by = system · trigger = warehouse_confirmed</div>
-            <div class="sources"><span class="src src-juspay">Juspay payout API</span><span class="src src-bhavin">Refund amount</span><span class="src src-auditdb">Audit Trail DB — write</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Path B -->
-    <div class="auto-card">
-      <div class="auto-card-head">
-        Path B — Device re-installed at new customer (PUT device_reinstalled)
-        <span class="auto-ticket">PARTNER-5380 + CX-1103</span>
-      </div>
-      <div class="auto-flow">
-        <div class="auto-step">
-          <div class="auto-step-num">1</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Trigger: PUT resolved with resolution_type = device_reinstalled</div>
-            <div style="font-size:11px;color:#555;margin-top:3px;">Partner installs device at new customer → system auto-resolves old customer's PUT with new type. New type separate from router_recovered / customer_recovered — name TBD with Partner pod.</div>
-            <div class="sources" style="margin-top:4px;"><span class="src src-partnerpod">Partner Pod — PARTNER-5380</span><span class="src src-put">PUT System</span></div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">2</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Extract user_account_id from PUT ticket (= original customer)</div>
-            <div style="font-size:11px;color:#555;margin-top:2px;">The PUT belongs to the old customer — not the newly installed customer.</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">3</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">G0: Customer eligible?</div>
-            <div class="sources"><span class="src src-custapi">Customer API</span><span class="src src-bhavin">Eligibility Config — Bhavin</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">NO → no action</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">4</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">G2: Already refunded? · Conflict: CS in progress?</div>
-            <div class="sources"><span class="src src-auditdb">Audit Trail DB</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">Either true → no action / skip</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">5</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">UPI on record?</div>
-            <div class="sources"><span class="src src-upistore">UPI Store</span></div>
-            <div style="font-size:11px;color:#c62828;margin-top:3px;">NO → no action (no-UPI flow TBD with Bhavin)</div>
-          </div>
-        </div>
-        <div class="auto-step">
-          <div class="auto-step-num">6</div>
-          <div class="auto-step-body">
-            <div class="auto-step-title">Initiate Juspay payout · initiated_by = system · trigger = put_device_reinstalled</div>
-            <div class="sources"><span class="src src-juspay">Juspay payout API</span><span class="src src-bhavin">Refund amount</span><span class="src src-auditdb">Audit Trail DB — write</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /auto-grid -->
-
-  <div class="rule-note" style="margin-top:20px;">
-    <strong>Open item on both auto-trigger paths:</strong> No-UPI fallback — what happens when UPI is not on record but device return is confirmed? Today's behaviour when PUT closes (router_recovered) with no UPI: check with Bhavin. Auto-trigger paths follow the same rule once defined.
-  </div>
-
-</div>
 </body>
 </html>
