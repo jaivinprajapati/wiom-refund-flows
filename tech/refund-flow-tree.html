@@ -115,10 +115,10 @@
     .s-partner    { background: #e8f5e9; color: #2e7d32; }
 
     /* signal grid inside signal check node */
-    .sig-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .sig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
     .sig-card {
       border: 1px solid #e8e8e8; border-radius: 5px; padding: 6px 8px;
-      font-size: 11px; min-width: 160px; flex: 1;
+      font-size: 11px;
     }
     .sig-title { font-weight: 600; color: #333; margin-bottom: 4px; font-size: 11px; }
     .sig-row { display: flex; gap: 5px; align-items: center; padding: 1px 0; font-size: 11px; }
@@ -323,7 +323,7 @@
                                 <div style="font-size:10px;color:#888;margin-top:4px;">Returns: partner_id, date, photo. Hub-only.</div>
                                 <div class="srcs" style="margin-top:5px;"><span class="src s-scanner">Scanner System — CX-1095</span></div>
                               </div>
-                              <div class="sig-card" style="border-color:#c8e6c9; background:#f9fbe7;">
+                              <div class="sig-card" style="border-color:#c8e6c9; background:#f9fbe7; grid-column: 1 / -1;">
                                 <div class="sig-title" style="color:#2e7d32;">3PL Confirmation <span style="font-weight:400; font-size:10px; color:#888;">(permission-gated)</span></div>
                                 <div class="sig-row"><span class="dot dot-g"></span>Proof uploaded by Anurag ✓</div>
                                 <div class="sig-row"><span class="dot dot-r"></span>Not uploaded ✗</div>

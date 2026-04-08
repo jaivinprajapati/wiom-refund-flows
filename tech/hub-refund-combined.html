@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Netbox Security Refund — Wiom Hub (Combined)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; font-size: 14px; background: #f5f5f5; color: #212121; }
+
+    /* ── Hub shell ── */
+    .hub-shell { display: flex; height: 100vh; }
+    .sidebar { width: 220px; background: #1a237e; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+    .sidebar-logo { padding: 16px 20px; font-size: 20px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.12); letter-spacing: 1px; color: rgb(217,0,141); }
+    .sidebar-section { padding: 12px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,0.4); }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; color: rgba(255,255,255,0.7); cursor: pointer; }
+    .sidebar-item.active { background: rgba(217,0,141,0.2); color: #fff; font-weight: 500; }
+    .sidebar-item .material-icons { font-size: 18px; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { height: 56px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; padding: 0 24px; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .topbar-back { width: 32px; height: 32px; border: none; background: none; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #555; }
+    .topbar-title { font-size: 16px; font-weight: 600; color: rgb(217,0,141); }
+    .content { flex: 1; overflow-y: auto; }
+
+    /* ── Customer card ── */
+    .customer-card { margin: 16px 24px; background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; padding: 14px 20px; display: flex; align-items: center; gap: 16px; }
+    .status-dot { width: 20px; height: 20px; border-radius: 50%; background: #4caf50; border: 2px solid #fff; box-shadow: 0 0 0 2px #4caf50; flex-shrink: 0; transition: all 0.2s; }
+    .status-dot.archived { background: #f44336; box-shadow: 0 0 0 2px #f44336; }
+    .customer-name { font-size: 15px; font-weight: 600; color: rgb(217,0,141); }
+    .customer-meta { display: flex; gap: 20px; margin-top: 4px; color: #555; font-size: 13px; align-items: center; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 16px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
+    .chip.pink { background: rgba(217,0,141,0.08); border-color: rgba(217,0,141,0.3); color: rgb(217,0,141); }
+    .chip.green { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+    .chip.red { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
+    .chip.orange { background: #fff8e1; border-color: #ffe082; color: #e65100; }
+
+    /* ── Tabs ── */
+    .tabs-bar { background: #fff; border-bottom: 2px solid rgb(217,0,141); display: flex; padding: 0 24px; position: sticky; top: 0; z-index: 10; overflow-x: auto; }
+    .tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: #757575; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; }
+    .tab.active { color: rgb(217,0,141); border-bottom-color: rgb(217,0,141); }
+
+    /* ── Subtab ── */
+    .subtab-content { padding: 24px; max-width: 900px; margin: 0 auto; }
+
+    /* ── Design-tool switcher ── */
+    .state-switcher { background: #fff8e1; border: 1px solid #f9a825; border-radius: 4px; padding: 10px 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .sw-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #6d4c00; letter-spacing: 0.8px; white-space: nowrap; }
+    .sw-div { width: 1px; height: 18px; background: #f9a825; margin: 0 2px; flex-shrink: 0; }
+    .state-btn { padding: 4px 10px; border-radius: 20px; border: 1px solid #f9a825; background: transparent; font-size: 11px; cursor: pointer; color: #6d4c00; font-family: inherit; }
+    .state-btn:hover, .state-btn.active { background: #f9a825; color: #fff; font-weight: 600; }
+    .state-btn.guard-btn { border-color: #ef9a9a; color: #c62828; }
+    .state-btn.guard-btn:hover, .state-btn.guard-btn.active { background: #c62828; border-color: #c62828; color: #fff; }
+
+    /* ── Section header ── */
+    .section-title { font-size: 15px; font-weight: 600; color: #212121; margin-bottom: 4px; }
+    .section-sub { font-size: 12px; color: #757575; margin-bottom: 20px; }
+
+    /* ── Signal grid (3 cols, 3PL full-width) ── */
+    .signal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .signal-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    .signal-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+    .signal-icon { font-size: 18px; color: #757575; }
+    .signal-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #555; flex: 1; }
+    .signal-badge { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; }
+    .badge-green { background: #e8f5e9; color: #2e7d32; }
+    .badge-yellow { background: #fff8e1; color: #e65100; }
+    .badge-red { background: #ffebee; color: #c62828; }
+    .badge-grey { background: #f5f5f5; color: #757575; }
+    .badge-blue { background: #e3f2fd; color: #1565c0; }
+    .signal-body { padding: 12px 16px; }
+    .signal-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; gap: 12px; }
+    .signal-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .signal-label { color: #9e9e9e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+    .signal-value { font-weight: 500; color: #212121; text-align: right; font-size: 13px; }
+    .signal-empty { font-size: 12px; color: #bdbdbd; font-style: italic; padding: 8px 0; }
+    .photo-thumb { width: 56px; height: 42px; border-radius: 4px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #9e9e9e; font-size: 20px; border: 1px solid #e0e0e0; flex-shrink: 0; }
+
+    /* ── Banners ── */
+    .proceed-banner { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+    .proceed-banner .material-icons { color: #2e7d32; font-size: 22px; flex-shrink: 0; }
+    .proceed-text { flex: 1; }
+    .proceed-title { font-size: 14px; font-weight: 600; color: #2e7d32; margin-bottom: 2px; }
+    .proceed-sub { font-size: 12px; color: #555; }
+    .btn-proceed { background: #2e7d32; color: #fff; padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .action-banner { background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 12px; }
+    .action-banner .material-icons { color: #e65100; font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .action-title { font-size: 14px; font-weight: 600; color: #e65100; margin-bottom: 2px; }
+    .action-sub { font-size: 12px; color: #555; }
+
+    /* ── Back button ── */
+    .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: transparent; border: 1px solid #bdbdbd; border-radius: 4px; font-size: 12px; color: #555; cursor: pointer; font-family: inherit; margin-bottom: 20px; }
+    .back-btn:hover { background: #f5f5f5; }
+
+    /* ── Alerts ── */
+    .alert { border-radius: 4px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; }
+    .alert .material-icons { font-size: 20px; margin-top: 1px; flex-shrink: 0; }
+    .alert-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .alert-body { font-size: 12px; line-height: 1.5; }
+    .alert-error { background: #ffebee; border-left: 4px solid #c62828; }
+    .alert-error .material-icons, .alert-error .alert-title { color: #c62828; }
+    .alert-warning { background: #fff8e1; border-left: 4px solid #f9a825; }
+    .alert-warning .material-icons, .alert-warning .alert-title { color: #e65100; }
+    .alert-info { background: #e3f2fd; border-left: 4px solid #1565c0; }
+    .alert-info .material-icons, .alert-info .alert-title { color: #1565c0; }
+    .alert-success { background: #e8f5e9; border-left: 4px solid #2e7d32; }
+    .alert-success .material-icons, .alert-success .alert-title { color: #2e7d32; }
+
+    /* ── Cards ── */
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: #212121; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+    .info-row { display: flex; flex-direction: column; gap: 2px; }
+    .info-label { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-value { font-size: 13px; font-weight: 500; color: #212121; }
+
+    /* ── Checklist ── */
+    .checklist-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px 20px; margin-bottom: 16px; }
+    .checklist-title { font-size: 13px; font-weight: 600; color: #424242; margin-bottom: 14px; }
+    .checklist-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .checklist-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .check-icon { font-size: 20px; margin-top: 1px; flex-shrink: 0; color: #bdbdbd; }
+    .check-icon.done { color: #2e7d32; }
+    .check-body { flex: 1; }
+    .check-label { font-size: 12px; font-weight: 500; color: #424242; margin-bottom: 8px; }
+    .field-required { color: #c62828; }
+    .tpl-lock-note { font-size: 11px; color: #e65100; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+    /* ── Form fields ── */
+    .remarks-select { width: 100%; border: 1px solid #bdbdbd; border-radius: 4px; padding: 9px 12px; font-family: 'Roboto', sans-serif; font-size: 13px; color: #212121; background: #fff; outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239e9e9e' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+    .remarks-select:focus { border-color: rgb(217,0,141); }
+    .remarks-select:disabled { background-color: #f5f5f5; color: #424242; cursor: default; opacity: 1; }
+    .remarks-field { width: 100%; border: 1px solid #bdbdbd; border-radius: 4px; padding: 10px 12px; font-family: 'Roboto', sans-serif; font-size: 13px; resize: vertical; min-height: 64px; color: #212121; outline: none; transition: border-color 0.15s; }
+    .remarks-field:focus { border-color: rgb(217,0,141); }
+    .remarks-field::placeholder { color: #bdbdbd; }
+
+    /* ── Upload ── */
+    .upload-area { border: 1.5px dashed #bdbdbd; border-radius: 4px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fafafa; margin-top: 10px; transition: border-color 0.15s; }
+    .upload-area:hover { border-color: rgb(217,0,141); background: rgba(217,0,141,0.02); }
+    .upload-area .material-icons { color: #9e9e9e; font-size: 20px; }
+    .upload-label { font-size: 12px; color: #757575; }
+    .upload-label strong { color: rgb(217,0,141); }
+    .attachment { display: flex; align-items: center; gap: 8px; background: #f1f8e9; border: 1px solid #a5d6a7; border-radius: 4px; padding: 7px 12px; font-size: 12px; color: #2e7d32; margin-top: 10px; }
+    .attachment .material-icons { font-size: 16px; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+    .btn .material-icons { font-size: 16px; }
+    .btn-primary { background: rgb(217,0,141); color: #fff; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { background: #e0e0e0; color: #9e9e9e; cursor: not-allowed; }
+    .btn-outlined { background: transparent; color: rgb(217,0,141); border: 1px solid rgb(217,0,141); }
+    .btn-outlined:disabled { color: #bdbdbd; border-color: #e0e0e0; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: #555; border: 1px solid #bdbdbd; }
+    .btn-ghost:hover { background: #f5f5f5; }
+    .btn-sm { padding: 5px 14px; font-size: 12px; }
+    .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* ── Confirm box ── */
+    .confirm-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 14px 16px; margin-top: 14px; display: none; }
+    .confirm-box-title { font-weight: 600; font-size: 13px; color: #e65100; margin-bottom: 10px; }
+
+    /* ── Source badge ── */
+    .source-badge { display: inline-flex; align-items: center; gap: 6px; background: #f3e5f5; border: 1px solid #ce93d8; border-radius: 4px; padding: 6px 12px; font-size: 12px; font-weight: 500; color: #6a1b9a; }
+    .source-badge .material-icons { font-size: 16px; }
+
+    /* ── Option block ── */
+    .option-block { border: 1px solid #e0e0e0; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+    .option-block.disabled { background: #fafafa; opacity: 0.65; }
+    .option-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #9e9e9e; margin-bottom: 6px; }
+    .option-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .option-desc { font-size: 12px; color: #757575; margin-bottom: 12px; line-height: 1.5; }
+
+    /* ── WA / Nudge status ── */
+    .wa-status { background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; padding: 12px 14px; margin-top: 12px; }
+    .wa-status-title { font-weight: 600; font-size: 13px; color: #2e7d32; margin-bottom: 6px; }
+    .wa-status-meta { font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 3px; }
+    .nudge-status { background: #e8eaf6; border: 1px solid #9fa8da; border-radius: 4px; padding: 12px 14px; margin-top: 12px; }
+    .nudge-status-title { font-weight: 600; font-size: 13px; color: #283593; margin-bottom: 6px; }
+    .nudge-status-meta { font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 3px; }
+    .polling-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1565c0; margin-top: 10px; }
+    .spinner { width: 14px; height: 14px; border: 2px solid #bbdefb; border-top-color: #1565c0; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Screens ── */
+    .view { }
+    .screen { display: none; }
+    .screen.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="hub-shell">
+
+  <div class="sidebar">
+    <div class="sidebar-logo">wiom hub</div>
+    <div class="sidebar-section">User Search</div>
+    <div class="sidebar-item"><span class="material-icons">person</span> Partners</div>
+    <div class="sidebar-item active"><span class="material-icons">people</span> Customers</div>
+    <div class="sidebar-item"><span class="material-icons">archive</span> Archived Customers</div>
+    <div class="sidebar-section">Operations</div>
+    <div class="sidebar-item"><span class="material-icons">inventory_2</span> Inventory</div>
+    <div class="sidebar-item"><span class="material-icons">settings</span> Config</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="topbar-back"><span class="material-icons">arrow_back</span></button>
+      <span class="topbar-title">Customer Details</span>
+    </div>
+
+    <div class="content">
+
+      <div class="customer-card">
+        <div class="status-dot" id="status-dot"></div>
+        <div>
+          <div class="customer-name">Ramesh Kumar</div>
+          <div class="customer-meta">
+            <span><span class="material-icons" style="font-size:15px;vertical-align:middle">router</span> WR-2948301</span>
+            <span><span class="material-icons" style="font-size:15px;vertical-align:middle">phone_android</span> 98XXXXXX12</span>
+            <span id="archived-badge" style="display:none"><span class="chip red">Archived</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs-bar">
+        <div class="tab">Customer Info</div>
+        <div class="tab">Network Diagnostics</div>
+        <div class="tab">Plan &amp; Billing</div>
+        <div class="tab">Coupons &amp; Extensions</div>
+        <div class="tab active">Netbox Security Refund</div>
+      </div>
+
+      <div class="subtab-content">
+
+        <!-- ── Design tool ── -->
+        <div class="state-switcher">
+          <span class="sw-label">Customer</span>
+          <button class="state-btn active" onclick="setArchived(false, this)">Active</button>
+          <button class="state-btn" onclick="setArchived(true, this)">Archived</button>
+
+          <span class="sw-div"></span>
+          <span class="sw-label">Scenario</span>
+          <button class="state-btn active" onclick="setScenario('put_resolved', this)">PUT resolved</button>
+          <button class="state-btn" onclick="setScenario('device_warehouse', this)">Device at warehouse</button>
+          <button class="state-btn" onclick="setScenario('device_partner', this)">Device at partner</button>
+          <button class="state-btn" onclick="setScenario('another_customer', this)">Another customer</button>
+          <button class="state-btn" onclick="setScenario('scanner_confirmed', this)">Scanner confirmed</button>
+          <button class="state-btn" onclick="setScenario('tpl_confirmed', this)" style="border-color:#a5d6a7;color:#1b5e20;">3PL confirmed</button>
+          <button class="state-btn" onclick="setScenario('put_open', this)">PUT open</button>
+          <button class="state-btn" onclick="setScenario('put_not_created', this)">PUT not created</button>
+
+          <span class="sw-div"></span>
+          <span class="sw-label">UPI status</span>
+          <button class="state-btn active" id="upi-btn" onclick="setUPI('upi', this)">Has UPI</button>
+          <button class="state-btn" id="source-btn" onclick="setUPI('source', this)">No UPI + source</button>
+          <button class="state-btn" id="nosource-btn" onclick="setUPI('nosource', this)">No UPI, no source</button>
+
+          <span class="sw-div"></span>
+          <span class="sw-label">Guard</span>
+          <button class="state-btn guard-btn" onclick="jumpToGuard('role')">Role denied</button>
+          <button class="state-btn guard-btn" onclick="jumpToGuard('eligibility')">Not eligible</button>
+          <button class="state-btn guard-btn" onclick="jumpToGuard('limit')">Daily limit</button>
+          <button class="state-btn guard-btn" onclick="jumpToGuard('done')">Already refunded</button>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             VIEW 1 — DIAGNOSTIC SIGNALS
+        ══════════════════════════════════════ -->
+        <div id="view-diag">
+          <div class="section-title">Device Return Signals</div>
+          <div class="section-sub">Review all signals before deciding on a refund. At least one must be green for refund to proceed.</div>
+          <div class="signal-grid" id="sig-grid">
+            <!-- rendered by JS -->
+          </div>
+          <div id="result-banner"></div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             VIEW 2 — REFUND PROCESSING
+        ══════════════════════════════════════ -->
+        <div id="view-refund" style="display:none">
+          <button class="back-btn" onclick="goBackToDiag()"><span class="material-icons" style="font-size:15px">arrow_back</span> Back to signals</button>
+
+          <!-- Guard screens -->
+          <div id="guard-role" class="screen">
+            <div class="alert alert-error">
+              <span class="material-icons">lock</span>
+              <div>
+                <div class="alert-title">Access denied</div>
+                <div class="alert-body">You do not have permission to process Netbox Security Refunds. Required: <code>CUSTOMER_MODULE_NETBOX_SECURITY_REFUND</code>. Contact your team lead to request access.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="guard-eligibility" class="screen">
+            <div class="alert alert-warning">
+              <span class="material-icons">info</span>
+              <div>
+                <div class="alert-title">Customer not eligible for a refund</div>
+                <div class="alert-body">This customer's segment is not eligible for a Netbox Security Deposit refund. Eligibility rules are defined per customer segment (PayG, Migrated PayG, Legacy). Do not ask the customer to submit UPI — no refund will be issued.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="guard-limit" class="screen">
+            <div class="alert alert-error">
+              <span class="material-icons">block</span>
+              <div>
+                <div class="alert-title">Daily limit reached</div>
+                <div class="alert-body">The maximum number of refunds or total amount for today has been reached (5 cases / ₹1,500). This will reset at midnight IST. Jaivin (Product) has been notified.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="guard-done" class="screen">
+            <div class="alert alert-info">
+              <span class="material-icons">check_circle_outline</span>
+              <div>
+                <div class="alert-title">Refund already processed</div>
+                <div class="alert-body">A refund has already been issued to this customer. No further refund can be processed.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Refund Details</div>
+              <div class="info-grid">
+                <div class="info-row"><span class="info-label">Transaction ID</span><span class="info-value">TXN-8827XXXX</span></div>
+                <div class="info-row"><span class="info-label">Amount</span><span class="info-value">₹300</span></div>
+                <div class="info-row"><span class="info-label">Method</span><span class="info-value">UPI</span></div>
+                <div class="info-row"><span class="info-label">Refunded to</span><span class="info-value">ramesh.kumar@okaxis</span></div>
+                <div class="info-row"><span class="info-label">Status</span><span class="info-value"><span class="chip green">Success</span></span></div>
+                <div class="info-row" style="grid-column:1/-1"><span class="info-label">Processed at</span><span class="info-value">3 Apr 2026, 14:32</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: UPI submitted ── -->
+          <div id="screen-upi" class="screen">
+            <div class="checklist-card">
+              <div class="checklist-title">Before you proceed</div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="upi-check1">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Select reason <span class="field-required">*</span></div>
+                  <select class="remarks-select" id="upi-reason" onchange="onChecklistChange('upi')">
+                    <option value="">— Select a reason —</option>
+                    <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                    <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                    <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                    <option value="device_another_customer">Device at another customer</option>
+                    <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                    <option value="3pl_confirmed">3PL pickup confirmed</option>
+                    <option value="others">Others</option>
+                  </select>
+                  <div class="tpl-lock-note" id="upi-lock-note" style="display:none"><span class="material-icons" style="font-size:14px">lock</span> Auto-set from 3PL confirmation — cannot be changed</div>
+                  <textarea class="remarks-field" id="upi-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="onChecklistChange('upi')"></textarea>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="upi-check2">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Screenshot proof <span class="field-required">*</span></div>
+                  <div id="upi-upload-standard">
+                    <label class="upload-area"><input type="file" accept="image/*,application/pdf" style="display:none" onchange="onChecklistChange('upi')"><span class="material-icons">upload_file</span><span class="upload-label"><strong>Click to upload</strong> — screenshot or document</span></label>
+                  </div>
+                  <div id="upi-upload-prefilled" style="display:none">
+                    <div class="attachment"><span class="material-icons">attach_file</span><span id="upi-prefill-name"></span></div>
+                    <div style="font-size:11px;color:#2e7d32;margin-top:4px;">Pre-filled from Anurag's upload — read-only</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Refund to submitted UPI</div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span class="info-label">Customer's UPI</span>
+                <span class="chip pink">ramesh.kumar@okaxis</span>
+              </div>
+              <div style="font-size:12px;color:#757575;margin-bottom:14px;">Verbally confirm this UPI with the customer before proceeding.</div>
+              <button class="btn btn-primary" id="upi-action-btn" disabled onclick="showConfirm('upi')">Process Refund</button>
+              <div class="confirm-box" id="confirm-upi">
+                <div class="confirm-box-title">Confirm: refund of ₹300 will be sent to <span class="chip pink" style="font-size:12px">ramesh.kumar@okaxis</span></div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToSuccess('upi')">Confirm &amp; Initiate</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('upi')">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: No UPI — source available ── -->
+          <div id="screen-source" class="screen">
+            <div class="checklist-card">
+              <div class="checklist-title">Before you proceed</div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="source-check1">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Select reason <span class="field-required">*</span></div>
+                  <select class="remarks-select" id="source-reason" onchange="onChecklistChange('source')">
+                    <option value="">— Select a reason —</option>
+                    <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                    <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                    <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                    <option value="device_another_customer">Device at another customer</option>
+                    <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                    <option value="3pl_confirmed">3PL pickup confirmed</option>
+                    <option value="others">Others</option>
+                  </select>
+                  <div class="tpl-lock-note" id="source-lock-note" style="display:none"><span class="material-icons" style="font-size:14px">lock</span> Auto-set from 3PL confirmation — cannot be changed</div>
+                  <textarea class="remarks-field" id="source-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="onChecklistChange('source')"></textarea>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="source-check2">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Screenshot proof <span class="field-required">*</span></div>
+                  <div id="source-upload-standard">
+                    <label class="upload-area"><input type="file" accept="image/*,application/pdf" style="display:none" onchange="onChecklistChange('source')"><span class="material-icons">upload_file</span><span class="upload-label"><strong>Click to upload</strong> — screenshot or document</span></label>
+                  </div>
+                  <div id="source-upload-prefilled" style="display:none">
+                    <div class="attachment"><span class="material-icons">attach_file</span><span id="source-prefill-name"></span></div>
+                    <div style="font-size:11px;color:#2e7d32;margin-top:4px;">Pre-filled from Anurag's upload — read-only</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="option-block">
+              <div class="option-label">Option A</div>
+              <div class="option-title">Refund to original payment source</div>
+              <div class="option-desc">Refund reaches the same account the customer paid from. Source details not visible at our end — let customer know if they ask.</div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                <span class="source-badge"><span class="material-icons">account_balance</span> Original payment source</span>
+                <span style="font-size:12px;color:#757575;">ETA: 3–5 days</span>
+              </div>
+              <button class="btn btn-outlined" id="source-action-btn" disabled onclick="showConfirm('source')">Refund to Source</button>
+              <div class="confirm-box" id="confirm-source">
+                <div class="confirm-box-title">Confirm: refund to customer's original payment source?</div>
+                <div style="font-size:12px;color:#757575;margin-top:6px;margin-bottom:4px;">Refund will reach the same account the customer paid from. ETA: 3–5 days.</div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToSuccess('source')">Confirm &amp; Initiate</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('source')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <!-- Option B — changes based on archived -->
+            <div id="source-optb-nudge" class="option-block">
+              <div class="option-label">Option B</div>
+              <div class="option-title">Nudge customer via app</div>
+              <div class="option-desc">Customer is active — send an in-app notification asking them to submit their UPI in the Wiom app. Hub will refresh when UPI is received.</div>
+              <button class="btn btn-outlined" id="source-nudge-btn" disabled onclick="showConfirm('source-nudge')"><span class="material-icons">notifications</span> Nudge Customer</button>
+              <div class="confirm-box" id="confirm-source-nudge">
+                <div class="confirm-box-title">Send in-app nudge to Ramesh Kumar?</div>
+                <div style="font-size:12px;color:#555;margin-top:4px;margin-bottom:4px;">Customer will receive a notification in the Wiom app to submit their UPI.</div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToNudgeSent('source')"><span class="material-icons">send</span> Confirm &amp; Send</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('source-nudge')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div id="source-optb-wa" class="option-block" style="display:none">
+              <div class="option-label">Option B</div>
+              <div class="option-title">Send refund link via WhatsApp</div>
+              <div class="option-desc">Customer's app is locked (archived). Send a WhatsApp link — customer verifies OTP, enters UPI, refund auto-initiates. Link valid 30 minutes.</div>
+              <button class="btn btn-outlined" id="source-wa-btn" disabled onclick="showConfirm('source-wa')"><span class="material-icons">send</span> Send Refund Link</button>
+              <div class="confirm-box" id="confirm-source-wa">
+                <div class="confirm-box-title">Link will be sent to <span class="chip pink" style="font-size:12px">98XXXXXX12</span></div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToWASent('source')"><span class="material-icons">send</span> Confirm &amp; Send</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('source-wa')">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: No UPI — no source ── -->
+          <div id="screen-nosource" class="screen">
+            <div class="checklist-card">
+              <div class="checklist-title">Before you proceed</div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="nosource-check1">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Select reason <span class="field-required">*</span></div>
+                  <select class="remarks-select" id="nosource-reason" onchange="onChecklistChange('nosource')">
+                    <option value="">— Select a reason —</option>
+                    <option value="put_resolved_recovered">PUT resolved — router recovered</option>
+                    <option value="device_warehouse">Device confirmed at Wiom warehouse</option>
+                    <option value="device_partner_idle">Device at partner office (IDLE status)</option>
+                    <option value="device_another_customer">Device at another customer</option>
+                    <option value="global_scanner">Global Scanner — device scanned at partner location</option>
+                    <option value="3pl_confirmed">3PL pickup confirmed</option>
+                    <option value="others">Others</option>
+                  </select>
+                  <div class="tpl-lock-note" id="nosource-lock-note" style="display:none"><span class="material-icons" style="font-size:14px">lock</span> Auto-set from 3PL confirmation — cannot be changed</div>
+                  <textarea class="remarks-field" id="nosource-remarks" placeholder="Additional remarks (min. 5 characters)..." oninput="onChecklistChange('nosource')"></textarea>
+                </div>
+              </div>
+              <div class="checklist-item">
+                <span class="material-icons check-icon" id="nosource-check2">check_circle_outline</span>
+                <div class="check-body">
+                  <div class="check-label">Screenshot proof <span class="field-required">*</span></div>
+                  <div id="nosource-upload-standard">
+                    <label class="upload-area"><input type="file" accept="image/*,application/pdf" style="display:none" onchange="onChecklistChange('nosource')"><span class="material-icons">upload_file</span><span class="upload-label"><strong>Click to upload</strong> — screenshot or document</span></label>
+                  </div>
+                  <div id="nosource-upload-prefilled" style="display:none">
+                    <div class="attachment"><span class="material-icons">attach_file</span><span id="nosource-prefill-name"></span></div>
+                    <div style="font-size:11px;color:#2e7d32;margin-top:4px;">Pre-filled from Anurag's upload — read-only</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="option-block disabled">
+              <div class="option-label">Option A</div>
+              <div class="option-title">Refund to original payment source</div>
+              <div class="option-desc">Not available — original payment source could not be found for this customer.</div>
+              <button class="btn btn-outlined" disabled>Refund to Source</button>
+            </div>
+            <div id="nosource-optb-nudge" class="option-block">
+              <div class="option-label">Option B</div>
+              <div class="option-title">Nudge customer via app</div>
+              <div class="option-desc">Customer is active — send an in-app notification asking them to submit their UPI in the Wiom app. Hub will refresh when UPI is received.</div>
+              <button class="btn btn-primary" id="nosource-nudge-btn" disabled onclick="showConfirm('nosource-nudge')"><span class="material-icons">notifications</span> Nudge Customer</button>
+              <div class="confirm-box" id="confirm-nosource-nudge">
+                <div class="confirm-box-title">Send in-app nudge to Ramesh Kumar?</div>
+                <div style="font-size:12px;color:#555;margin-top:4px;margin-bottom:4px;">Customer will receive a notification in the Wiom app to submit their UPI.</div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToNudgeSent('nosource')"><span class="material-icons">send</span> Confirm &amp; Send</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('nosource-nudge')">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div id="nosource-optb-wa" class="option-block" style="display:none">
+              <div class="option-label">Option B</div>
+              <div class="option-title">Send refund link via WhatsApp</div>
+              <div class="option-desc">Customer's app is locked (archived). Send a WhatsApp link — customer verifies OTP, enters UPI, refund auto-initiates. Link valid 30 minutes.</div>
+              <button class="btn btn-primary" id="nosource-wa-btn" disabled onclick="showConfirm('nosource-wa')"><span class="material-icons">send</span> Send Refund Link</button>
+              <div class="confirm-box" id="confirm-nosource-wa">
+                <div class="confirm-box-title">Link will be sent to <span class="chip pink" style="font-size:12px">98XXXXXX12</span></div>
+                <div class="btn-row" style="margin-top:12px">
+                  <button class="btn btn-primary" onclick="goToWASent('nosource')"><span class="material-icons">send</span> Confirm &amp; Send</button>
+                  <button class="btn btn-ghost" onclick="hideConfirm('nosource-wa')">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: App nudge sent (6a) ── -->
+          <div id="screen-nudge-sent" class="screen">
+            <div class="card">
+              <div class="card-title">Submission</div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Reason</span><span class="info-value" id="nudge-sub-reason" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Remarks</span><span class="info-value" id="nudge-sub-remarks" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row"><span class="info-label">Proof</span><span class="info-value" id="nudge-sub-proof">—</span></div>
+            </div>
+            <div class="option-block">
+              <div class="option-label">Option B — In-app nudge</div>
+              <div class="option-title">Waiting for customer to submit UPI</div>
+              <div class="option-desc">Customer has been notified in-app. This screen will update automatically once UPI is received.</div>
+              <div class="nudge-status">
+                <div class="nudge-status-title">✓ Nudge sent</div>
+                <div class="nudge-status-meta">
+                  <span>Sent at: 6 Apr 2026, 11:04 AM</span>
+                  <span>Initiated by: Jaivin Prajapati (Agent · ID: WA-1021)</span>
+                </div>
+              </div>
+              <div class="polling-row"><div class="spinner"></div> Polling for UPI submission…</div>
+              <div style="margin-top:12px">
+                <button class="btn btn-ghost btn-sm"><span class="material-icons" style="font-size:15px">notifications</span> Re-send Nudge</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: WA link sent ── -->
+          <div id="screen-wasent" class="screen">
+            <div class="card">
+              <div class="card-title">Submission</div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Reason</span><span class="info-value" id="wasent-sub-reason" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Remarks</span><span class="info-value" id="wasent-sub-remarks" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row"><span class="info-label">Proof</span><span class="info-value" id="wasent-sub-proof">—</span></div>
+            </div>
+            <div class="option-block">
+              <div class="option-label">Option B — WhatsApp link</div>
+              <div class="option-title">Send refund link via WhatsApp</div>
+              <div class="option-desc">Customer verifies OTP, enters UPI, and the refund auto-initiates. Link valid 30 minutes.</div>
+              <div class="wa-status">
+                <div class="wa-status-title">✓ Link sent</div>
+                <div class="wa-status-meta">
+                  <span>Sent at: 6 Apr 2026, 11:04 AM</span>
+                  <span>Expires at: 6 Apr 2026, 11:34 AM</span>
+                  <span>Initiated by: Jaivin Prajapati (Agent · ID: WA-1021)</span>
+                </div>
+              </div>
+              <div style="margin-top:12px">
+                <button class="btn btn-ghost btn-sm"><span class="material-icons" style="font-size:15px">refresh</span> Regenerate Link</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── SCREEN: Refund initiated ── -->
+          <div id="screen-success" class="screen">
+            <div class="alert alert-success">
+              <span class="material-icons">check_circle</span>
+              <div>
+                <div class="alert-title">Refund initiated</div>
+                <div class="alert-body">Refund of ₹300 has been initiated. Customer will receive a WhatsApp confirmation. ETA: 3–5 days.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Submission</div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Reason</span><span class="info-value" id="success-sub-reason" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row" style="margin-bottom:10px"><span class="info-label">Remarks</span><span class="info-value" id="success-sub-remarks" style="font-weight:400;color:#424242;">—</span></div>
+              <div class="info-row"><span class="info-label">Proof</span><span class="info-value" id="success-sub-proof">—</span></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Refund Details</div>
+              <div class="info-grid">
+                <div class="info-row"><span class="info-label">Transaction ID</span><span class="info-value">TXN-9102XXXX</span></div>
+                <div class="info-row"><span class="info-label">Amount</span><span class="info-value">₹300</span></div>
+                <div class="info-row"><span class="info-label">Method</span><span class="info-value" id="success-method">UPI</span></div>
+                <div class="info-row"><span class="info-label">Refunded to</span><span class="info-value" id="success-refunded-to"><span class="chip pink">ramesh.kumar@okaxis</span></span></div>
+                <div class="info-row"><span class="info-label">Status</span><span class="info-value"><span class="chip orange">Processing</span></span></div>
+                <div class="info-row"><span class="info-label">Initiated by</span><span class="info-value">Jaivin Prajapati <span style="color:#9e9e9e;font-weight:400">(Agent · ID: WA-1021)</span></span></div>
+                <div class="info-row" style="grid-column:1/-1"><span class="info-label">Initiated at</span><span class="info-value">6 Apr 2026, 11:04 AM</span></div>
+              </div>
+              <div class="alert alert-info" style="margin-top:14px;margin-bottom:0">
+                <span class="material-icons">info</span>
+                <div><div class="alert-body" id="success-info-note">Let the customer know their refund is being sent to <strong>ramesh.kumar@okaxis</strong>. They'll receive a WhatsApp confirmation shortly.</div></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /view-refund -->
+
+      </div><!-- /subtab-content -->
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /hub-shell -->
+
+<script>
+  // ── State ────────────────────────────────────────────────
+  let isArchived = false;
+  let currentScenario = 'put_resolved';
+  let currentUPI = 'upi';
+  let lastActionScreen = null;
+
+  const REASON_LABELS = {
+    'put_resolved_recovered': 'PUT resolved — router recovered',
+    'device_warehouse':       'Device confirmed at Wiom warehouse',
+    'device_partner_idle':    'Device at partner office (IDLE)',
+    'device_another_customer':'Device at another customer',
+    'global_scanner':         'Global Scanner — device scanned at partner',
+    '3pl_confirmed':          '3PL pickup confirmed',
+    'others':                 'Others'
+  };
+
+  // ── Scenario data ─────────────────────────────────────────
+  const SCENARIOS = {
+    put_resolved: {
+      eligible: true,
+      put:     { badge:'badge-green',  text:'Resolved',     rows:[['Status','Resolved — router_recovered'],['PUT ID','PUT-104821'],['Opened','28 Mar 2026'],['Resolved','4 Apr 2026']] },
+      device:  { badge:'badge-blue',   text:'In Warehouse', rows:[['t_device status','IN_WAREHOUSE'],['Device ID','WR-2948301'],['Last updated','4 Apr 2026']] },
+      scanner: { badge:'badge-grey',   text:'No scan',      empty:'No scanner record for this device.' },
+      tpl:     { confirmed:false },
+      proceed: 'PUT resolved (router_recovered) · Device confirmed in warehouse.',
+      reason:  'put_resolved_recovered'
+    },
+    device_warehouse: {
+      eligible: true,
+      put:     { badge:'badge-grey',   text:'Not created',  empty:'No PUT found after last recharge.' },
+      device:  { badge:'badge-blue',   text:'In Warehouse', rows:[['t_device status','IN_WAREHOUSE'],['Device ID','WR-2948301'],['Last updated','2 Apr 2026']] },
+      scanner: { badge:'badge-grey',   text:'No scan',      empty:'No scanner record for this device.' },
+      tpl:     { confirmed:false },
+      proceed: 'Device confirmed at Wiom warehouse (IN_WAREHOUSE).',
+      reason:  'device_warehouse'
+    },
+    device_partner: {
+      eligible: true,
+      put:     { badge:'badge-yellow', text:'Expired',      rows:[['Status','Expired'],['PUT ID','PUT-100291'],['Opened','10 Feb 2026'],['Expired','10 Mar 2026']] },
+      device:  { badge:'badge-yellow', text:'IDLE',         rows:[['t_device status','IDLE'],['Device ID','WR-2948301'],['Last updated','18 Mar 2026']] },
+      scanner: { badge:'badge-green',  text:'Scanned',      rows:[['Partner','Suresh Cables (P-4821)'],['Scanned on','20 Mar 2026, 3:41 PM']], photo:true },
+      tpl:     { confirmed:false },
+      proceed: 'Device IDLE at partner · Global Scanner confirms Suresh Cables (P-4821) on 20 Mar 2026.',
+      reason:  'global_scanner'
+    },
+    another_customer: {
+      eligible: true,
+      put:     { badge:'badge-grey',   text:'Not created',  empty:'No PUT found. Customer handed device over without initiating return.' },
+      device:  { badge:'badge-yellow', text:'INSTALLED',    rows:[['t_device status','INSTALLED'],['Account ID','Different customer'],['Device ID','WR-2948301'],['Last updated','1 Apr 2026']] },
+      scanner: { badge:'badge-grey',   text:'No scan',      empty:'No scanner record for this device.' },
+      tpl:     { confirmed:false },
+      proceed: 'Device INSTALLED at a different customer — original customer is rightful for a refund.',
+      reason:  'device_another_customer'
+    },
+    scanner_confirmed: {
+      eligible: true,
+      put:     { badge:'badge-yellow', text:'Open',         rows:[['Status','Open'],['PUT ID','PUT-110034'],['Opened','25 Mar 2026']] },
+      device:  { badge:'badge-yellow', text:'IDLE',         rows:[['t_device status','IDLE'],['Device ID','WR-2948301']] },
+      scanner: { badge:'badge-green',  text:'Scanned',      rows:[['Partner','Ramji Broadband (P-3391)'],['Scanned on','3 Apr 2026, 10:22 AM']], photo:true },
+      tpl:     { confirmed:false },
+      proceed: 'Global Scanner confirms device at Ramji Broadband (P-3391) on 3 Apr 2026.',
+      reason:  'global_scanner'
+    },
+    tpl_confirmed: {
+      eligible: true,
+      put:     { badge:'badge-grey',   text:'Not created',  empty:'No PUT found after last recharge.' },
+      device:  { badge:'badge-red',    text:'LOST',         rows:[['t_device status','LOST'],['Device ID','WR-2948301']] },
+      scanner: { badge:'badge-grey',   text:'No scan',      empty:'No scanner record for this device.' },
+      tpl:     { confirmed:true, uploadedBy:'Anurag Sharma (OPS-012)', uploadedOn:'5 Apr 2026, 2:14 PM', filename:'3pl_confirmation_WR2948301.pdf' },
+      proceed: '3PL pickup confirmation uploaded by Anurag. Reason auto-set to "3PL pickup confirmed", proof pre-filled.',
+      reason:  '3pl_confirmed',
+      lockReason: true
+    },
+    put_open: {
+      eligible: false,
+      put:     { badge:'badge-yellow', text:'Open',   rows:[['Status','Open'],['PUT ID','PUT-112201'],['Opened','1 Apr 2026']] },
+      device:  { badge:'badge-red',    text:'LOST',   rows:[['t_device status','LOST'],['Device ID','WR-2948301']] },
+      scanner: { badge:'badge-grey',   text:'No scan', empty:'No scanner record for this device.' },
+      tpl:     { confirmed:false },
+      action:    'Action needed — not yet eligible',
+      actionSub: 'PUT is open. Device location not confirmed. Refund cannot proceed until PUT is resolved or a scanner confirmation is available.'
+    },
+    put_not_created: {
+      eligible: false,
+      put:     { badge:'badge-grey',   text:'Not created', empty:'No PUT found after last recharge.' },
+      device:  { badge:'badge-red',    text:'LOST',        rows:[['t_device status','LOST'],['Device ID','WR-2948301']] },
+      scanner: { badge:'badge-grey',   text:'No scan',     empty:'No scanner record for this device.' },
+      tpl:     { confirmed:false },
+      action:    'Action needed — not yet eligible',
+      actionSub: 'No PUT and no device confirmation. Ask customer to start the Netbox Return flow in the Wiom app.'
+    }
+  };
+
+  // ── Render signal cards ───────────────────────────────────
+  function renderCard(icon, name, data) {
+    let body = '';
+    if (data.empty) {
+      body = `<div class="signal-empty">${data.empty}</div>`;
+    } else if (data.rows) {
+      body = data.rows.map(([lbl, val]) => {
+        const style = val === 'Different customer' ? ' style="color:#c62828"' : '';
+        return `<div class="signal-row"><span class="signal-label">${lbl}</span><span class="signal-value"${style}>${val}</span></div>`;
+      }).join('');
+      if (data.photo) body += `<div class="signal-row" style="align-items:center"><span class="signal-label">Photo</span><div class="photo-thumb"><span class="material-icons">photo_camera</span></div></div>`;
+    }
+    return `<div class="signal-card"><div class="signal-card-head"><span class="material-icons signal-icon">${icon}</span><span class="signal-name">${name}</span><span class="signal-badge ${data.badge}">${data.text}</span></div><div class="signal-body">${body}</div></div>`;
+  }
+
+  function renderTPL(tpl) {
+    let body, badge, badgeText, headStyle = '', cardStyle = 'grid-column:1/-1';
+    if (tpl.confirmed) {
+      badge = 'badge-green'; badgeText = 'Confirmed';
+      headStyle = 'background:#f1f8e9;';
+      cardStyle += ';border-color:#a5d6a7';
+      body = `<div class="signal-row"><span class="signal-label">Uploaded by</span><span class="signal-value">${tpl.uploadedBy}</span></div>
+              <div class="signal-row"><span class="signal-label">Uploaded on</span><span class="signal-value">${tpl.uploadedOn}</span></div>
+              <div class="signal-row" style="align-items:center"><span class="signal-label">Proof</span><div class="attachment"><span class="material-icons">attach_file</span>${tpl.filename}</div></div>`;
+    } else {
+      badge = 'badge-grey'; badgeText = 'Not uploaded';
+      body = `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 0">
+                <div class="signal-empty" style="margin:0">No 3PL pickup confirmation on record.</div>
+                <button style="padding:6px 14px;border-radius:4px;border:1px solid #bdbdbd;background:#f5f5f5;color:#9e9e9e;font-size:12px;font-family:inherit;cursor:not-allowed;flex-shrink:0" disabled title="Requires CUSTOMER_MODULE_NETBOX_3PL_CONFIRMATION — Anurag only">Upload 3PL Proof</button>
+              </div>`;
+    }
+    return `<div class="signal-card" style="${cardStyle}"><div class="signal-card-head" style="${headStyle}"><span class="material-icons signal-icon" style="${tpl.confirmed?'color:#2e7d32':''}">local_shipping</span><span class="signal-name">3PL Confirmation</span><span class="signal-badge ${badge}">${badgeText}</span></div><div class="signal-body">${body}</div></div>`;
+  }
+
+  function renderDiagnostic() {
+    const s = SCENARIOS[currentScenario];
+    document.getElementById('sig-grid').innerHTML =
+      renderCard('assignment_return','PUT Status', s.put) +
+      renderCard('devices','Device Status', s.device) +
+      renderCard('qr_code_scanner','Global Scanner', s.scanner) +
+      renderTPL(s.tpl);
+
+    const banner = document.getElementById('result-banner');
+    if (s.eligible) {
+      banner.innerHTML = `<div class="proceed-banner"><span class="material-icons">check_circle</span><div class="proceed-text"><div class="proceed-title">Refund eligible</div><div class="proceed-sub">${s.proceed}</div></div><button class="btn-proceed" onclick="goToRefund()">Go to Refund →</button></div>`;
+    } else {
+      banner.innerHTML = `<div class="action-banner"><span class="material-icons">info</span><div><div class="action-title">${s.action}</div><div class="action-sub">${s.actionSub}</div></div></div>`;
+    }
+  }
+
+  // ── State setters ─────────────────────────────────────────
+  function setArchived(val, btn) {
+    isArchived = val;
+    document.getElementById('status-dot').className = 'status-dot' + (val ? ' archived' : '');
+    document.getElementById('archived-badge').style.display = val ? 'inline-flex' : 'none';
+    document.querySelectorAll('.state-switcher .state-btn').forEach(b => {
+      if (b === btn) b.classList.add('active');
+      else if (b.onclick && b.onclick.toString().includes('setArchived')) b.classList.remove('active');
+    });
+    updateOptionB();
+  }
+
+  function setScenario(key, btn) {
+    currentScenario = key;
+    document.querySelectorAll('.state-switcher .state-btn').forEach(b => {
+      if (b === btn) b.classList.add('active');
+      else if (b.onclick && b.onclick.toString().includes('setScenario')) b.classList.remove('active');
+    });
+    // Return to diagnostic when switching scenario
+    document.getElementById('view-diag').style.display = '';
+    document.getElementById('view-refund').style.display = 'none';
+    renderDiagnostic();
+  }
+
+  function setUPI(val, btn) {
+    currentUPI = val;
+    document.querySelectorAll('.state-switcher .state-btn').forEach(b => {
+      if (b === btn) b.classList.add('active');
+      else if (b.onclick && b.onclick.toString().includes('setUPI')) b.classList.remove('active');
+    });
+  }
+
+  // ── Navigation ────────────────────────────────────────────
+  function goToRefund() {
+    const s = SCENARIOS[currentScenario];
+    document.getElementById('view-diag').style.display = 'none';
+    document.getElementById('view-refund').style.display = '';
+
+    // Hide all guard + processing screens
+    document.querySelectorAll('#view-refund .screen').forEach(el => el.style.display = 'none');
+
+    // Show correct processing screen
+    const screenId = 'screen-' + currentUPI;
+    const screen = document.getElementById(screenId);
+    if (screen) screen.style.display = 'block';
+
+    // Set up checklist based on scenario
+    setupChecklist(s);
+    updateOptionB();
+    lastActionScreen = currentUPI;
+
+    // Reset confirm boxes
+    document.querySelectorAll('.confirm-box').forEach(el => el.style.display = 'none');
+  }
+
+  function goBackToDiag() {
+    document.getElementById('view-diag').style.display = '';
+    document.getElementById('view-refund').style.display = 'none';
+    renderDiagnostic();
+  }
+
+  function jumpToGuard(guard) {
+    document.getElementById('view-diag').style.display = 'none';
+    document.getElementById('view-refund').style.display = '';
+    document.querySelectorAll('#view-refund .screen').forEach(el => el.style.display = 'none');
+    document.getElementById('guard-' + guard).style.display = 'block';
+  }
+
+  // ── Checklist setup ───────────────────────────────────────
+  function setupChecklist(s) {
+    const lock = s.lockReason || false;
+    const filename = s.tpl && s.tpl.confirmed ? s.tpl.filename : null;
+
+    ['upi','source','nosource'].forEach(screen => {
+      const reasonEl = document.getElementById(screen + '-reason');
+      const lockNote = document.getElementById(screen + '-lock-note');
+      if (reasonEl) {
+        reasonEl.value = s.reason || '';
+        reasonEl.disabled = lock;
+        if (lockNote) lockNote.style.display = lock ? 'flex' : 'none';
+      }
+
+      // Proof upload
+      const stdDiv = document.getElementById(screen + '-upload-standard');
+      const preDiv = document.getElementById(screen + '-upload-prefilled');
+      const nameEl = document.getElementById(screen + '-prefill-name');
+      if (stdDiv && preDiv) {
+        if (lock && filename) {
+          stdDiv.style.display = 'none';
+          preDiv.style.display = 'block';
+          if (nameEl) nameEl.textContent = filename;
+          // Mark check2 done
+          const icon2 = document.getElementById(screen + '-check2');
+          if (icon2) { icon2.textContent = 'check_circle'; icon2.className = 'material-icons check-icon done'; }
+        } else {
+          stdDiv.style.display = 'block';
+          preDiv.style.display = 'none';
+          const icon2 = document.getElementById(screen + '-check2');
+          if (icon2) { icon2.textContent = 'check_circle_outline'; icon2.className = 'material-icons check-icon'; }
+        }
+      }
+      onChecklistChange(screen);
+    });
+  }
+
+  function onChecklistChange(screen) {
+    const reasonEl  = document.getElementById(screen + '-reason');
+    const remarksEl = document.getElementById(screen + '-remarks');
+    const fileInput = document.querySelector('#screen-' + screen + ' input[type=file]');
+    const preDiv    = document.getElementById(screen + '-upload-prefilled');
+
+    const check1 = reasonEl && reasonEl.value !== '' && remarksEl && remarksEl.value.trim().length >= 5;
+    const check2 = (fileInput && fileInput.files.length > 0) || (preDiv && preDiv.style.display !== 'none');
+
+    const icon1 = document.getElementById(screen + '-check1');
+    if (icon1) { icon1.textContent = check1 ? 'check_circle' : 'check_circle_outline'; icon1.className = 'material-icons check-icon' + (check1 ? ' done' : ''); }
+    const icon2 = document.getElementById(screen + '-check2');
+    if (icon2 && !(preDiv && preDiv.style.display !== 'none')) {
+      icon2.textContent = check2 ? 'check_circle' : 'check_circle_outline';
+      icon2.className = 'material-icons check-icon' + (check2 ? ' done' : '');
+    }
+
+    const allDone = check1 && check2;
+    const actionBtn  = document.getElementById(screen + '-action-btn');
+    const nudgeBtn   = document.getElementById(screen + '-nudge-btn');
+    const waBtn      = document.getElementById(screen + '-wa-btn');
+    if (actionBtn) actionBtn.disabled = !allDone;
+    if (nudgeBtn)  nudgeBtn.disabled  = !allDone;
+    if (waBtn)     waBtn.disabled     = !allDone;
+  }
+
+  // ── Option B toggle (archived vs active) ─────────────────
+  function updateOptionB() {
+    ['source','nosource'].forEach(screen => {
+      const nudgeDiv = document.getElementById(screen + '-optb-nudge');
+      const waDiv    = document.getElementById(screen + '-optb-wa');
+      if (nudgeDiv) nudgeDiv.style.display = isArchived ? 'none' : 'block';
+      if (waDiv)    waDiv.style.display    = isArchived ? 'block' : 'none';
+    });
+  }
+
+  // ── Submission capture ────────────────────────────────────
+  function captureSubmission(screen) {
+    const reasonEl  = document.getElementById(screen + '-reason');
+    const remarksEl = document.getElementById(screen + '-remarks');
+    const fileInput = document.querySelector('#screen-' + screen + ' input[type=file]');
+    const preNameEl = document.getElementById(screen + '-prefill-name');
+    const reason  = reasonEl  ? (REASON_LABELS[reasonEl.value] || reasonEl.value || '—') : '—';
+    const remarks = remarksEl ? (remarksEl.value.trim() || '—') : '—';
+    const file    = (fileInput && fileInput.files[0]) ? fileInput.files[0].name : (preNameEl && preNameEl.textContent ? preNameEl.textContent : null);
+    return { reason, remarks, file };
+  }
+
+  function populateSubmission(prefix, reason, remarks, file) {
+    const rEl = document.getElementById(prefix + '-sub-reason');
+    const mEl = document.getElementById(prefix + '-sub-remarks');
+    const pEl = document.getElementById(prefix + '-sub-proof');
+    if (rEl) rEl.textContent = reason || '—';
+    if (mEl) mEl.textContent = remarks || '—';
+    if (pEl) pEl.innerHTML = file ? `<span class="material-icons" style="font-size:16px;color:#2e7d32">attach_file</span> ${file}` : '—';
+  }
+
+  // ── Confirm box helpers ───────────────────────────────────
+  function showConfirm(id) { const el = document.getElementById('confirm-' + id); if (el) el.style.display = 'block'; }
+  function hideConfirm(id) { const el = document.getElementById('confirm-' + id); if (el) el.style.display = 'none'; }
+
+  // ── Terminal actions ──────────────────────────────────────
+  function goToSuccess(from) {
+    const { reason, remarks, file } = captureSubmission(from === 'source' ? 'source' : 'upi');
+    populateSubmission('success', reason, remarks, file);
+    if (from === 'source') {
+      document.getElementById('success-method').textContent = 'Original source';
+      document.getElementById('success-refunded-to').textContent = 'Original payment source';
+      document.getElementById('success-info-note').innerHTML = 'Refund is being sent to the customer\'s original payment source. ETA: 3–5 days.';
+    }
+    showScreen('success');
+  }
+
+  function goToNudgeSent(from) {
+    const { reason, remarks, file } = captureSubmission(from);
+    populateSubmission('nudge', reason, remarks, file);
+    showScreen('nudge-sent');
+  }
+
+  function goToWASent(from) {
+    const { reason, remarks, file } = captureSubmission(from);
+    populateSubmission('wasent', reason, remarks, file);
+    showScreen('wasent');
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('#view-refund .screen').forEach(el => el.style.display = 'none');
+    document.getElementById('screen-' + id).style.display = 'block';
+    document.querySelectorAll('.confirm-box').forEach(el => el.style.display = 'none');
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  renderDiagnostic();
+  updateOptionB();
+</script>
+</body>
+</html>
