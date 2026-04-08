@@ -124,7 +124,8 @@
     <h3>No UPI problem</h3>
     <ul>
       <li>Customer never submitted UPI in the Wiom app</li>
-      <li>Once archived, app is locked — no channel to collect UPI</li>
+      <li><strong>Non-archived customer:</strong> App is active — CS nudges customer via in-app notification (Bhavin API) to submit UPI. Customer submits in app, Hub refreshes, refund proceeds.</li>
+      <li><strong>Archived customer:</strong> App is locked — no in-app channel. WA link → captive portal is the only UPI collection path.</li>
       <li>Device is with Wiom, refund is owed, but nowhere to send it</li>
     </ul>
 
@@ -132,7 +133,8 @@
     <h2 id="users">Users</h2>
     <table>
       <tr><th>User</th><th>Where</th><th>What they do</th></tr>
-      <tr><td><strong>CS Agent</strong></td><td>Wiom Hub</td><td>Reviews case, fills checklist, triggers refund or sends WA link</td></tr>
+      <tr><td><strong>CS Agent</strong></td><td>Wiom Hub</td><td>Reviews case, fills checklist, triggers refund, sends in-app nudge (non-archived), or sends WA link (archived)</td></tr>
+      <tr><td><strong>Customer (non-archived)</strong></td><td>Wiom app</td><td>Receives in-app nudge, submits UPI in app</td></tr>
       <tr><td><strong>Customer (archived)</strong></td><td>Captive portal (browser)</td><td>Receives WA link, verifies OTP, submits UPI, confirms refund</td></tr>
     </table>
 
@@ -141,11 +143,11 @@
     <ul>
       <li>Manual refund when customer has submitted UPI</li>
       <li>Manual refund to original payment source (Juspay)</li>
+      <li>In-app nudge (Bhavin API) for non-archived customers without UPI — CS triggers from Hub, customer submits UPI in app</li>
       <li>WhatsApp link + captive portal for archived customers to submit UPI</li>
       <li>Daily limit guardrail + per-customer refund cap</li>
       <li>Role-gated access</li>
     </ul>
-    <div class="callout callout-warn"><strong>Out of scope V1:</strong> active customer UPI submission path (guide customer via app while on call) — separate ticket.</div>
 
     <hr>
 
@@ -309,8 +311,10 @@
     <table>
       <tr><th>Scenario</th><th>What CS sees</th><th>Available actions</th></tr>
       <tr><td>Customer submitted UPI</td><td>UPI displayed as chip</td><td>Process Refund</td></tr>
-      <tr><td>No UPI submitted — payment source available</td><td>"Original payment source" (no instrument details — Juspay doesn't expose them)</td><td>Refund to Source <em>or</em> Send WA link</td></tr>
-      <tr><td>No UPI submitted — no source (expired/missing)</td><td>Source option shown as disabled</td><td>Send WA link only</td></tr>
+      <tr><td>No UPI — source available — <strong>non-archived</strong></td><td>"Original payment source" badge</td><td>Refund to Source <em>or</em> Nudge via app (Bhavin API)</td></tr>
+      <tr><td>No UPI — source available — <strong>archived</strong></td><td>"Original payment source" badge</td><td>Refund to Source <em>or</em> Send WA link</td></tr>
+      <tr><td>No UPI — no source — <strong>non-archived</strong></td><td>Source option disabled</td><td>Nudge via app only</td></tr>
+      <tr><td>No UPI — no source — <strong>archived</strong></td><td>Source option disabled</td><td>Send WA link only</td></tr>
     </table>
     <div class="callout callout-info">If customer asks where the source refund will land: CS informs them it goes to the same account they paid from. Suggest UPI submission if they want visibility.</div>
 
@@ -365,8 +369,9 @@
       <div class="screen-card-head"><div class="screen-num">4</div><span class="screen-name">No UPI — source available</span></div>
       <div class="screen-body"><ul>
         <li>Checklist — CTAs disabled until both done</li>
-        <li><strong>Option A — Refund to source:</strong> shows "Original payment source" badge, ETA 3–5 days. CTA: Refund to Source → confirm box → Confirm & Initiate</li>
-        <li><strong>Option B — Send WA link:</strong> CTA: Send Refund Link → confirm box (shows customer mobile) → Confirm & Send → WA link sent screen</li>
+        <li><strong>Option A — Refund to source:</strong> shows "Original payment source" badge, ETA 3–5 days. CTA: Refund to Source → confirm box → Confirm &amp; Initiate</li>
+        <li><strong>Option B (non-archived customer) — Nudge via app:</strong> CTA: Nudge Customer → confirm box → Confirm &amp; Send → nudge sent screen. Customer submits UPI in Wiom app; Hub refreshes when UPI is available.</li>
+        <li><strong>Option B (archived customer) — Send WA link:</strong> CTA: Send Refund Link → confirm box (shows customer mobile) → Confirm &amp; Send → WA link sent screen</li>
       </ul></div>
     </div>
 
@@ -375,7 +380,19 @@
       <div class="screen-body"><ul>
         <li>Checklist — CTA disabled until both done</li>
         <li>Option A (Refund to source) rendered as disabled block: "Original payment source could not be found."</li>
-        <li>Option B (Send WA link) is the only active CTA → confirm box → Confirm & Send → WA link sent screen</li>
+        <li><strong>Option B (non-archived customer) — Nudge via app:</strong> only active CTA → confirm box → Confirm &amp; Send → nudge sent screen</li>
+        <li><strong>Option B (archived customer) — Send WA link:</strong> only active CTA → confirm box → Confirm &amp; Send → WA link sent screen</li>
+      </ul></div>
+    </div>
+
+    <div class="screen-card">
+      <div class="screen-card-head"><div class="screen-num">6a</div><span class="screen-name">App nudge sent — waiting for UPI</span></div>
+      <div class="screen-body"><ul>
+        <li>Submission card (read-only): remarks + proof filename</li>
+        <li>Status block: nudge sent at, initiated by (agent name + ID)</li>
+        <li>Info text: "Customer has been notified in-app to submit their UPI. This screen will update automatically once UPI is received."</li>
+        <li>CTA: Re-send Nudge — re-triggers Bhavin API notification</li>
+        <li>Screen transitions to Screen 3 (Customer submitted UPI) once UPI is available</li>
       </ul></div>
     </div>
 
@@ -532,9 +549,9 @@
           <td>Hub frontend, captive portal</td>
         </tr>
         <tr>
-          <td>UPI collection — active customers</td>
-          <td>In-app UPI submission (customer submits while on call with CS). Out of scope V1 — separate ticket.</td>
-          <td>Hub frontend</td>
+          <td>UPI collection — non-archived customers (in-app nudge)</td>
+          <td>Bhavin to provide API: CS triggers from Hub → in-app notification sent to customer → customer submits UPI in Wiom app → Hub polls/refreshes to detect UPI submission. API contract TBD with Bhavin.</td>
+          <td>Hub frontend, Bhavin (API owner)</td>
         </tr>
         <tr>
           <td>UPI collection — archived customers (captive portal BE)</td>

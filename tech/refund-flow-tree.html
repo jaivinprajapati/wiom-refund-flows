@@ -391,32 +391,64 @@
                                     <div class="node n-decide">
                                       <div class="node-head">
                                         <span class="node-badge">Decision</span>
-                                        <span class="node-title">Is Juspay original payment source still valid? (~6 months from payment)</span>
+                                        <span class="node-title">Is customer archived?</span>
                                       </div>
                                       <div class="node-body">
-                                        <div class="srcs"><span class="src s-juspay">Juspay — source validity check</span></div>
+                                        <div class="srcs"><span class="src s-custapi">Customer team — archived status field</span></div>
                                       </div>
                                     </div>
 
                                     <div class="branch-down">
+                                      <!-- NON-ARCHIVED -->
                                       <div class="branch-item">
-                                        <div class="branch-label bl-yes">YES — Source valid</div>
-                                        <div class="node n-decide">
+                                        <div class="branch-label bl-yes">NO — Non-archived (app active)</div>
+                                        <div class="node n-action">
                                           <div class="node-head">
-                                            <span class="node-badge">CS Choice</span>
-                                            <span class="node-title">"Original payment source" badge shown — CS chooses: Refund to Source OR Send WA link</span>
+                                            <span class="node-badge">CS Action</span>
+                                            <span class="node-title">Nudge customer via app (Bhavin API). If source valid: also offer Refund to Source.</span>
                                           </div>
                                           <div class="node-body">
-                                            <div class="node-desc">Note: instrument details not visible (Juspay constraint) — refund reaches same account customer paid from.</div>
+                                            <div class="node-desc">CS clicks "Nudge Customer" → Bhavin API sends in-app notification → customer submits UPI in Wiom app → Hub auto-refreshes → transitions to UPI-on-record flow.</div>
+                                            <div class="srcs">
+                                              <span class="src s-bhavin">Bhavin — in-app nudge API (TBD)</span>
+                                              <span class="src s-juspay">Juspay — source validity (if offering Option A)</span>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
+                                      <!-- ARCHIVED -->
                                       <div class="branch-item">
-                                        <div class="branch-label bl-no">NO — Source expired</div>
+                                        <div class="branch-label bl-no">YES — Archived (app locked)</div>
                                         <div class="node n-decide">
                                           <div class="node-head">
-                                            <span class="node-badge">Only Option</span>
-                                            <span class="node-title">Send WA link — source option disabled</span>
+                                            <span class="node-badge">Decision</span>
+                                            <span class="node-title">Is Juspay original payment source still valid? (~6 months from payment)</span>
+                                          </div>
+                                          <div class="node-body">
+                                            <div class="srcs"><span class="src s-juspay">Juspay — source validity check</span></div>
+                                          </div>
+                                        </div>
+                                        <div class="branch-down">
+                                          <div class="branch-item">
+                                            <div class="branch-label bl-yes">YES — Source valid</div>
+                                            <div class="node n-decide">
+                                              <div class="node-head">
+                                                <span class="node-badge">CS Choice</span>
+                                                <span class="node-title">"Original payment source" badge — CS chooses: Refund to Source OR Send WA link</span>
+                                              </div>
+                                              <div class="node-body">
+                                                <div class="node-desc">Instrument details not visible (Juspay constraint). Refund reaches same account customer paid from.</div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div class="branch-item">
+                                            <div class="branch-label bl-no">NO — Source expired</div>
+                                            <div class="node n-decide">
+                                              <div class="node-head">
+                                                <span class="node-badge">Only Option</span>
+                                                <span class="node-title">Send WA link — source option disabled</span>
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
@@ -425,9 +457,26 @@
 
                                 </div><!-- /upi branch-down -->
 
-                                <!-- WA LINK SUB-FLOW -->
+                                <!-- UPI COLLECTION SUB-FLOWS -->
                                 <div class="branch-item" style="margin-top:12px;">
-                                  <div class="branch-label bl-c">WA LINK PATH</div>
+                                  <div class="branch-label bl-yes">IN-APP NUDGE (non-archived)</div>
+                                  <div class="node n-action">
+                                    <div class="node-head">
+                                      <span class="node-badge">Sub-flow</span>
+                                      <span class="node-title">Hub sends nudge → customer submits UPI in Wiom app → Hub refreshes → proceed to payout</span>
+                                    </div>
+                                    <div class="node-body">
+                                      <div class="node-desc">CS clicks "Nudge Customer" → Bhavin API called → in-app notification delivered. Hub polls for UPI submission. CS can re-send nudge if no response. Once UPI received → auto-transitions to Process Refund screen.</div>
+                                      <div class="srcs">
+                                        <span class="src s-bhavin">Bhavin — nudge API</span>
+                                        <span class="src s-upi">UPI stored on app submit</span>
+                                        <span class="src s-juspay">Juspay payout API</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="branch-item" style="margin-top:8px;">
+                                  <div class="branch-label bl-no">WA LINK PATH (archived)</div>
                                   <div class="node n-action">
                                     <div class="node-head">
                                       <span class="node-badge">Sub-flow</span>
