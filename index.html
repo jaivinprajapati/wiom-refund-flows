@@ -93,6 +93,9 @@
 <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('cs')">CS Diagnostic Flow</button>
     <button class="tab-btn" onclick="switchTab('ops')">Manual Refund — Wiom Hub</button>
+    <button class="tab-btn" onclick="switchTab('tree')">Refund System Tree</button>
+    <button class="tab-btn" onclick="switchTab('auto')">Auto-Trigger Refunds</button>
+    <button class="tab-btn" onclick="switchTab('resources')">PRD &amp; Resources</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -655,6 +658,324 @@ flowchart TD
 </div>
 
 </div><!-- end tab-ops -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 3: SYSTEM FLOW TREE                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tab-tree" class="tab-content">
+
+<h1>Refund System Flow Tree</h1>
+<p>Updated: 2026-04-07 &nbsp;·&nbsp; Audience: Tech &nbsp;·&nbsp; Covers manual (CS-initiated) + auto-trigger paths</p>
+
+<div class="context">
+    <strong>How to read:</strong> Every decision node has YES/NO branches. All terminal states (blocked or success) are leaves. Data sources are shown in <em>italics</em> under each node. The signal check is the only OR-gate — at least one of the five must be green. All other gates are AND (all must pass).<br><br>
+    <strong>Guard evaluation order (manual flow):</strong> G3 Role → G0 Eligibility → G2 Already refunded → G1 Daily cap → Signal check → CS Checklist → UPI path
+</div>
+
+<!-- ===================== DIAGRAM 1: GUARD STACK ===================== -->
+<h2>1. Guard Stack — Checks Before Any Refund Action</h2>
+<div class="context">All four guards run in order on tab load. If any guard fires, no refund action is possible for this customer in this session.</div>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef start   fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef guard   fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef blocked fill:#ffebee,stroke:#ef9a9a,color:#c62828
+    classDef pass    fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    classDef src     fill:#f5f5f5,stroke:#bdbdbd,color:#424242
+
+    ENTRY["CS opens Netbox Security Refund tab\nSystem fetches: segment · eligibility · amount · refund record · UPI · daily counter · Juspay source"]:::start
+
+    ENTRY --> G3{"G3: Agent has\nCUSTOMER_MODULE_NETBOX_SECURITY_REFUND\npermission?"}:::guard
+    G3 -->|"NO"| BG3["BLOCKED\nTab visible, all CTAs disabled\nSource: Hub Permission System"]:::blocked
+    G3 -->|"YES"| G0
+
+    G0{"G0: Customer eligible\nfor a refund?\n3 segments — rules defined by Bhavin (TBD)\nPayG · Migrated PayG · Legacy"}:::guard
+    G0 -->|"NO"| BG0["BLOCKED — Not eligible\nInfo alert only · No CTAs · No WA link sent\nDo not collect UPI from ineligible customers\nSource: Customer API + Eligibility Config (Bhavin)"]:::blocked
+    G0 -->|"YES\n+ refund amount known"| G2
+
+    G2{"G2: Successful refund already\nprocessed for this user_account_id?\nSystem + manual combined · only success counts"}:::guard
+    G2 -->|"YES"| BG2["BLOCKED — Already refunded\nRead-only: txn ID · amount · method\nrefunded to · status · date\nSource: Audit Trail DB"]:::blocked
+    G2 -->|"NO"| G1
+
+    G1{"G1: Daily global cap reached?\n5 txns/day OR ₹1500/day\nwhichever hits first · both configurable"}:::guard
+    G1 -->|"YES"| BG1["BLOCKED — Daily limit reached\nResets midnight IST\nJaivin (Product) alerted on breach\nSource: System Counter"]:::blocked
+    G1 -->|"NO"| PASS["All guards cleared\n→ Proceed to signal check"]:::pass
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 2: SIGNAL CHECK ===================== -->
+<h2>2. Signal Check — At Least 1 of 5 Must Be Confirmed</h2>
+<div class="context">
+    CS reviews the diagnostic signals view before processing a refund. The rule: at least one eligible signal must be confirmed. If none are green, refund cannot proceed regardless of other factors.
+</div>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef sig     fill:#fff3e0,stroke:#e65100,color:#4e2a00
+    classDef green   fill:#e8f5e9,stroke:#388e3c,color:#1b5e20
+    classDef red     fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef src     fill:#f5f5f5,stroke:#bdbdbd,color:#424242
+    classDef action  fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+
+    CHK["Signal Check\nCS reviews diagnostic view — at least 1 must be green"]:::sig
+
+    CHK --> P1{"PUT resolved\nrouter_recovered?"}:::sig
+    CHK --> P2{"t_device =\nIN_WAREHOUSE?"}:::sig
+    CHK --> P3{"t_device = IDLE\nat partner office?"}:::sig
+    CHK --> P4{"t_device = INSTALLED\ndifferent user_account_id?"}:::sig
+    CHK --> P5{"Global Scanner:\nscanned after\nlast recharge?"}:::sig
+
+    P1 -->|"YES"| G1OK["PUT resolved — router_recovered ✓\nSource: PUT System (CX-1094)"]:::green
+    P1 -->|"NO"| P1N["PUT open / expired /\nother reason / not created ✗\nNot a refund trigger"]:::red
+
+    P2 -->|"YES"| G2OK["Device at Wiom warehouse ✓\nSource: t_device (CX-1098)"]:::green
+    P3 -->|"YES"| G3OK["Device at partner (IDLE) ✓\nSource: t_device (CX-1098)"]:::green
+    P4 -->|"YES"| G4OK["Device at another customer ✓\nOriginal customer still owed refund\nSource: t_device (CX-1098)"]:::green
+    P5 -->|"YES"| G5OK["Scanner confirmed at partner ✓\nReturns: partner_id · date · photo\nHub-only — Source: Scanner (CX-1095)"]:::green
+
+    G1OK --> ANY["≥ 1 signal green\n→ CS fills checklist"]:::action
+    G2OK --> ANY
+    G3OK --> ANY
+    G4OK --> ANY
+    G5OK --> ANY
+
+    P1N --> NONE["No signals confirmed\n→ Action needed:\nRaise PUT or get scanner scan"]:::red
+    P2 -->|"NO"| NONE
+    P3 -->|"NO"| NONE
+    P4 -->|"NO"| NONE
+    P5 -->|"NO"| NONE
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 3: REFUND PATHS ===================== -->
+<h2>3. Checklist → Refund Paths → Payout</h2>
+<div class="context">
+    CS completes the pre-action checklist (all 3 items required — CTAs disabled until complete), then takes one of three refund paths depending on UPI and Juspay source availability.
+</div>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef action  fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+    classDef decide  fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef resolve fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef fail    fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef portal  fill:#fff3e0,stroke:#e65100,color:#4e2a00
+
+    CL["CS completes pre-action checklist\n① Reason — dropdown (7 options incl. PUT resolved·router_recovered,\nIN_WAREHOUSE, IDLE, another customer, scanner, 3PL, others)\n② Remarks — free text, min 5 chars\n③ Screenshot proof — upload\nAll stored in audit trail"]:::action
+
+    CL --> UPI{"UPI on record\nfor this customer?"}:::decide
+
+    UPI -->|"YES"| PATH_A["Path A: Process directly\nUPI chip shown (e.g. ramesh@okaxis)\nCS confirms verbally → Process Refund CTA\n→ confirm dialog (UPI + amount)\nSource: UPI Store"]:::action
+
+    UPI -->|"NO"| SRC{"Juspay original source\nstill valid? (~6 months)"}:::decide
+
+    SRC -->|"YES"| PATH_B["Path B: CS chooses\nA — Refund to Source (no instrument details shown\n    Juspay constraint)\nOR\nB — Send WA link\nSource: Juspay validity"]:::action
+
+    SRC -->|"NO"| PATH_C["Path C: WA link only\nSource option disabled\nCS sends link → Clevertap → WhatsApp"]:::action
+
+    PATH_C --> PORTAL["Captive Portal (archived customers)\nLanding → OTP verify (3 retries, TTL TBD)\n→ UPI entry → confirm → auto-payout\nLink TTL: 30 min · CS regenerates if expired"]:::portal
+
+    PATH_A --> PAY[("Juspay payout")]:::action
+    PATH_B --> PAY
+    PORTAL --> PAY
+
+    PAY -->|"SUCCESS"| DONE["✅ Refund complete\nSuccess screen + submission card\n(reason · remarks · proof filename)\nWA confirmation sent · ETA 3–5 days\nPer-customer counter incremented\nAudit: initiated_by=agent · method · txn_id"]:::resolve
+
+    PAY -->|"FAILURE"| FAIL["❌ Failure\nCS retries · counter not incremented\nLogged in audit trail"]:::fail
+</pre>
+</div>
+
+</div><!-- end tab-tree -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 4: AUTO-TRIGGER REFUNDS                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tab-auto" class="tab-content">
+
+<h1>Auto-Trigger Refunds — System Initiated</h1>
+<p>Updated: 2026-04-07</p>
+
+<div class="context">
+    <strong>Premise:</strong> Two scenarios where Wiom has the strongest possible confirmation that a device has been recovered — no CS action is needed. System detects the condition and initiates the Juspay payout directly.<br><br>
+    <strong>Key rules:</strong> No daily cap applies (strongest-signal scenarios). Per-customer cap of 1 still applies (system + manual combined). Conflict guard: if CS has already manually initiated a refund for this <code>user_account_id</code>, auto-trigger does not fire. G0 eligibility (Bhavin's segment rules) still applies.
+</div>
+
+<div class="legend">
+    <div class="legend-item"><div class="legend-color" style="background:#e3f2fd"></div> System detection</div>
+    <div class="legend-item"><div class="legend-color" style="background:#c8e6c9"></div> Payout initiated</div>
+    <div class="legend-item"><div class="legend-color" style="background:#ffcdd2"></div> Blocked / No action</div>
+    <div class="legend-item"><div class="legend-color" style="background:#f3e5f5"></div> Decision</div>
+</div>
+
+<!-- ===================== DIAGRAM 1: PATH A — WAREHOUSE ===================== -->
+<h2>1. Path A — Device Confirmed at Wiom Warehouse</h2>
+<div class="context">
+    BE pod detects when a device's status flips to <strong>IN_WAREHOUSE</strong> in t_device. If the original customer has a UPI on record and is eligible, Customer pod processes the refund automatically.<br><br>
+    <strong>Tickets:</strong> BE-1584 (detection + signal) · CX-1102 (payout + audit trail)
+</div>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef trigger fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef check   fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef resolve fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef skip    fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef action  fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+
+    WH["t_device.status → IN_WAREHOUSE\nBE pod detects (BE-1584)\nSource: t_device"]:::trigger
+
+    WH --> E0{"G0: Customer eligible?\nSegment check"}:::check
+    E0 -->|"NO"| SK0["No action"]:::skip
+    E0 -->|"YES"| E2{"G2: Already refunded\nfor this user_account_id?"}:::check
+    E2 -->|"YES"| SK2["No action — log"]:::skip
+    E2 -->|"NO"| EC{"CS refund currently\nin progress for this customer?"}:::check
+    EC -->|"YES"| SKC["Skip — do not fire\nConflict guard"]:::skip
+    EC -->|"NO"| EU{"UPI on record?"}:::check
+    EU -->|"NO"| SKU["No action\nNo-UPI fallback TBD with Bhavin\n(same rule as PUT router_recovered + no UPI)"]:::skip
+    EU -->|"YES"| PAY["Juspay payout\ninitiated_by = system\ntrigger = warehouse_confirmed\nNo daily cap\nSource: Juspay API · Bhavin amount config"]:::action
+    PAY -->|"SUCCESS"| DONE["✅ Refund complete\nWA confirmation to customer\nPer-customer counter incremented\nAudit: initiated_by=system · trigger · txn_id · amount"]:::resolve
+    PAY -->|"FAILURE"| FAIL["Failure logged\nSurface to CS for manual handling"]:::skip
+</pre>
+</div>
+
+<!-- ===================== DIAGRAM 2: PATH B — REINSTALLED ===================== -->
+<h2>2. Path B — Device Re-installed at New Customer (PUT: device_reinstalled)</h2>
+<div class="context">
+    When a partner installs a device (previously assigned to Customer A) at Customer B, the system auto-resolves Customer A's PUT with a new resolution type: <strong>device_reinstalled</strong>. This is separate from <em>router_recovered</em> and <em>customer_recovered</em> — exact name TBD with Partner pod. Customer pod listens for this event and processes the refund for Customer A.<br><br>
+    <strong>Jaivin is coordinating the upstream change:</strong> partner re-installation → PUT auto-resolves as device_reinstalled.<br><br>
+    <strong>Tickets:</strong> PARTNER-5380 (new resolution type) · CX-1103 (payout + audit trail)
+</div>
+<div class="diagram-container">
+<pre class="mermaid">
+flowchart TD
+    classDef trigger fill:#1565c0,stroke:#0d47a1,color:#fff
+    classDef check   fill:#f3e5f5,stroke:#7b1fa2,color:#4a0072
+    classDef resolve fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    classDef skip    fill:#ffcdd2,stroke:#c62828,color:#6a0000
+    classDef action  fill:#e3f2fd,stroke:#1565c0,color:#0d3b66
+
+    INST["Partner installs device at new customer\nPUT for original customer auto-resolves\nresolution_type = device_reinstalled\nSource: Partner pod (PARTNER-5380) · PUT System"]:::trigger
+
+    INST --> OC["Extract user_account_id from PUT ticket\n= original customer to be refunded\n(NOT the newly installed customer)"]:::action
+
+    OC --> E0{"G0: Original customer eligible?\nSegment check"}:::check
+    E0 -->|"NO"| SK0["No action"]:::skip
+    E0 -->|"YES"| E2{"G2: Already refunded\nfor this user_account_id?"}:::check
+    E2 -->|"YES"| SK2["No action — log"]:::skip
+    E2 -->|"NO"| EC{"CS refund currently\nin progress for this customer?"}:::check
+    EC -->|"YES"| SKC["Skip — do not fire\nConflict guard"]:::skip
+    EC -->|"NO"| EU{"UPI on record\nfor original customer?"}:::check
+    EU -->|"NO"| SKU["No action\nNo-UPI fallback TBD with Bhavin"]:::skip
+    EU -->|"YES"| PAY["Juspay payout\ninitiated_by = system\ntrigger = put_device_reinstalled\nNo daily cap\nSource: Juspay API · Bhavin amount config"]:::action
+    PAY -->|"SUCCESS"| DONE["✅ Refund complete\nWA confirmation to original customer\nPer-customer counter incremented\nAudit: put_id · initiated_by=system · trigger · txn_id"]:::resolve
+    PAY -->|"FAILURE"| FAIL["Failure logged\nSurface to CS for manual handling"]:::skip
+</pre>
+</div>
+
+<!-- ===================== OPEN ITEMS ===================== -->
+<h2>3. Open Items</h2>
+<div class="open-item"><strong>No-UPI fallback (both paths):</strong> What happens today when PUT closes as router_recovered and no UPI is on record? Auto-trigger paths follow the same rule. Check with Bhavin.</div>
+<div class="open-item"><strong>device_reinstalled resolution type name:</strong> Exact name to be confirmed with Partner pod (PARTNER-5380). Must be distinct from router_recovered and customer_recovered.</div>
+<div class="open-item"><strong>G0 eligibility config (Bhavin):</strong> Which of the 3 segments (PayG, Migrated PayG, Legacy) qualify and for how much. Gates all flows — manual and auto-trigger.</div>
+
+</div><!-- end tab-auto -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 5: PRD & RESOURCES                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tab-resources" class="tab-content">
+
+<h1>PRD &amp; Resources</h1>
+<p>All documents, prototypes, and tickets for the Netbox Security Refund project.</p>
+
+<!-- DOCUMENTS -->
+<h2>1. Documents</h2>
+<div class="diagram-container" style="padding:0;overflow:hidden;">
+<table>
+<thead><tr><th>Document</th><th>Description</th><th>Link</th></tr></thead>
+<tbody>
+<tr>
+    <td><strong>Full PRD</strong></td>
+    <td>Complete product requirements: scope, guards, refund paths, checklist, captive portal, business rules, cross-pod dependencies, open items</td>
+    <td><a href="tech/netbox-refund-prd.html" target="_blank" style="color:#1565c0;">netbox-refund-prd.html →</a></td>
+</tr>
+<tr>
+    <td><strong>Refund Flow Tree</strong></td>
+    <td>Visual decision tree: all guards, signal check, refund paths, and auto-trigger flows with data sources at each node</td>
+    <td><a href="tech/refund-flow-tree.html" target="_blank" style="color:#1565c0;">refund-flow-tree.html →</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- PROTOTYPES -->
+<h2>2. Design Prototypes</h2>
+<div class="diagram-container" style="padding:0;overflow:hidden;">
+<table>
+<thead><tr><th>Prototype</th><th>What it covers</th><th>Link</th></tr></thead>
+<tbody>
+<tr>
+    <td><strong>Hub UI — Manual Refund</strong></td>
+    <td>All 7 states of the Netbox Security Refund sub-tab in Wiom Hub: guard screens, UPI path, source path, WA link sent, processing, success</td>
+    <td><a href="tech/netbox-refund-design.html" target="_blank" style="color:#1565c0;">netbox-refund-design.html →</a></td>
+</tr>
+<tr>
+    <td><strong>Captive Portal</strong></td>
+    <td>7-screen browser portal for archived customers: landing → OTP → UPI entry → confirm → success / expired link / invalid UPI</td>
+    <td><a href="tech/captive-portal-flow.html" target="_blank" style="color:#1565c0;">captive-portal-flow.html →</a></td>
+</tr>
+<tr>
+    <td><strong>Diagnostic Signals</strong></td>
+    <td>Hub view showing PUT status, device status, and Global Scanner cards for 7 scenarios with eligible / action-needed banners</td>
+    <td><a href="tech/diagnostic-signals.html" target="_blank" style="color:#1565c0;">diagnostic-signals.html →</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- TICKETS -->
+<h2>3. Jira Tickets</h2>
+<div class="diagram-container" style="padding:0;overflow:hidden;">
+<table>
+<thead><tr><th>Ticket</th><th>Pod</th><th>What</th></tr></thead>
+<tbody>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1080" target="_blank" style="color:#1565c0;">CX-1080</a></td><td>Biz Efficiency</td><td>Wiom Hub — Manual Refund Sub-tab (Frontend)</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1081" target="_blank" style="color:#1565c0;">CX-1081</a></td><td>Customer / Rajnikant</td><td>Archived Customer UPI — WhatsApp Link + Captive Portal</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1082" target="_blank" style="color:#1565c0;">CX-1082</a></td><td>Customer</td><td>Refund to Original Payment Source (Juspay)</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1083" target="_blank" style="color:#1565c0;">CX-1083</a></td><td>Customer</td><td>Determine Refund Amount Per Customer</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1084" target="_blank" style="color:#1565c0;">CX-1084</a></td><td>Customer</td><td>Payment Status Tracking and Failure Reset</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1085" target="_blank" style="color:#1565c0;">CX-1085</a></td><td>Customer</td><td>Audit Trail — Backend Logging</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1091" target="_blank" style="color:#1565c0;">CX-1091</a></td><td>Customer</td><td>Guardrails — Daily Limit + Per-Customer Cap + Role Gating</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1092" target="_blank" style="color:#1565c0;">CX-1092</a></td><td>Customer</td><td>Refund to Submitted UPI — Direct Processing Flow</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1094" target="_blank" style="color:#1565c0;">CX-1094</a></td><td>Partner App</td><td>Diagnostic Signals — PUT Status API for Wiom Hub</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1095" target="_blank" style="color:#1565c0;">CX-1095</a></td><td>Partner App</td><td>Diagnostic Signals — Global Scanner API for Wiom Hub</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1097" target="_blank" style="color:#1565c0;">CX-1097</a></td><td>Biz Efficiency</td><td>Wiom Hub — Diagnostic Signals View (Frontend)</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1098" target="_blank" style="color:#1565c0;">CX-1098</a></td><td>BE</td><td>Diagnostic Signals — Device Status API</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/BE-1584" target="_blank" style="color:#1565c0;">BE-1584</a></td><td>Biz Efficiency</td><td>Auto Refund — Detect IN_WAREHOUSE + UPI → Signal Customer Pod</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1102" target="_blank" style="color:#1565c0;">CX-1102</a></td><td>Customer</td><td>Auto Refund — Process Payout on Warehouse Signal (Scenario 1)</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/PARTNER-5380" target="_blank" style="color:#1565c0;">PARTNER-5380</a></td><td>Partner</td><td>Auto Refund — New PUT Resolution Type: device_reinstalled</td></tr>
+<tr><td><a href="https://wiom.atlassian.net/browse/CX-1103" target="_blank" style="color:#1565c0;">CX-1103</a></td><td>Customer</td><td>Auto Refund — Process Payout on device_reinstalled Event (Scenario 2)</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- OPEN ITEMS -->
+<h2>4. Open Items</h2>
+<div class="open-item"><strong>Customer eligibility by segment (Bhavin):</strong> Which of PayG (post-26 Jan) / Migrated PayG (pre-26 Jan) / Legacy qualify, and for how much. Gates all flows — must be resolved before build starts.</div>
+<div class="open-item"><strong>Refund amount per customer (Bhavin):</strong> Where is it stored? Default for PayG with no PUT? Likely differs per segment.</div>
+<div class="open-item"><strong>Juspay validity check:</strong> Use installation date or Juspay payment timestamp? Tech to confirm what's available in DB.</div>
+<div class="open-item"><strong>OTP delivery — SMS or WhatsApp? (Akash):</strong> Retry limit: 3 per active link. TTL: Customer team to decide.</div>
+<div class="open-item"><strong>Captive portal — existing or new standalone page? (Rajnikant):</strong> Align before build starts.</div>
+<div class="open-item"><strong>Clevertap WhatsApp campaign (Jaivin):</strong> Akash/Shail confirmed. Campaign not yet created.</div>
+<div class="open-item"><strong>Daily limit breach alert (Jaivin):</strong> Hub/Slack alert when manual refund daily limit is hit. Separate from refund failure handling.</div>
+<div class="open-item"><strong>Volume sizing (Deepakshi):</strong> How many customers have called for a refund? Not yet done.</div>
+<div class="open-item"><strong>No-UPI fallback (Bhavin):</strong> What happens today when PUT closes (router_recovered) with no UPI? Auto-trigger paths follow the same rule.</div>
+
+</div><!-- end tab-resources -->
 
 
 <script>
