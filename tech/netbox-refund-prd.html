@@ -258,6 +258,23 @@
 
     <div class="screen-card">
       <div class="screen-card-head">
+        <div class="screen-num">G0</div>
+        <span class="screen-name">Customer not eligible for refund</span>
+        <span class="screen-tag" style="background:#ffebee;color:#c62828;">Guard</span>
+      </div>
+      <div class="screen-body">
+        <ul>
+          <li>Eligibility is segment-based. Three customer types exist: <strong>PayG</strong> (post-26 Jan install), <strong>Migrated PayG</strong> (pre-26 Jan, migrated to new app), <strong>Legacy</strong> (still on old app)</li>
+          <li>Business logic for which segments are eligible — and for how much — sits with <strong>Bhavin</strong>. TBD.</li>
+          <li>This check runs <strong>before</strong> everything else — before daily cap, before per-customer cap, before any UPI collection is triggered</li>
+          <li>If not eligible: show info alert explaining customer is not eligible for a Netbox Security Refund. No CTAs. No WA link sent.</li>
+          <li><strong>Critical:</strong> CS must not ask a customer to submit UPI via captive portal if they are ultimately ineligible — this creates a bad customer experience and must be prevented at the system level</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="screen-card">
+      <div class="screen-card-head">
         <div class="screen-num">G1</div>
         <span class="screen-name">Daily limit reached</span>
         <span class="screen-tag" style="background:#ffebee;color:#c62828;">Guard</span>
@@ -474,7 +491,8 @@
     <h2 id="rules">Business Rules</h2>
     <table>
       <tr><th>Rule</th><th>Detail</th></tr>
-      <tr><td>Refund amount</td><td>TBD — Bhavin to confirm. PayG with no PUT: Bhavin to set amount. Others: amount always available in system.</td></tr>
+      <tr><td>Customer eligibility</td><td>Segment-based — PayG (post-26 Jan), Migrated PayG (pre-26 Jan), Legacy (old app). Which segments qualify and for how much: <strong>Bhavin to define</strong>. Must be resolved before any flow (manual or auto) can be triggered.</td></tr>
+      <tr><td>Refund amount</td><td>TBD — Bhavin to confirm per segment. PayG with no PUT: Bhavin to set amount. Others: amount available in system.</td></tr>
       <tr><td>Per-customer cap</td><td>1 refund per customer (system + manual). Applies on success only — failures don't count.</td></tr>
       <tr><td>Daily global limit</td><td># transactions AND total Rs — whichever hits first. Resets midnight. Values TBD.</td></tr>
       <tr><td>WA link TTL</td><td>30 min. CS agent regenerates from Hub; previous link immediately invalidated.</td></tr>
@@ -605,7 +623,11 @@
 
     <div class="open-item">
       <div class="open-dot"></div>
-      <div><div class="open-q">Refund amount — where is it stored per customer?</div><div class="open-note">Bhavin to confirm source + define default for PayG with no PUT</div></div>
+      <div><div class="open-q">Customer eligibility rules — which segments qualify for a refund?</div><div class="open-note">Bhavin to define. Three segments: PayG (post-26 Jan), Migrated PayG (pre-26 Jan), Legacy. Must be resolved before any build starts — gates all flows (manual + auto-trigger + UPI collection).</div></div>
+    </div>
+    <div class="open-item">
+      <div class="open-dot"></div>
+      <div><div class="open-q">Refund amount — where is it stored per customer?</div><div class="open-note">Bhavin to confirm source + define default for PayG with no PUT. Likely differs per segment once eligibility rules are defined.</div></div>
     </div>
     <div class="open-item">
       <div class="open-dot"></div>
