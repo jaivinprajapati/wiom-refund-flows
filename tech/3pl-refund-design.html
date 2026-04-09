@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3PL Refund — Netbox Return Requests (Design)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; font-size: 14px; background: #f5f5f5; color: #212121; }
+
+    /* ── Hub Shell ── */
+    .hub { display: flex; height: 100vh; }
+    .sidebar { width: 220px; background: #1a237e; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-logo { padding: 16px 20px; font-size: 20px; font-weight: 700; letter-spacing: 1px; color: rgb(217,0,141); border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-section { padding: 14px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: rgba(255,255,255,0.35); }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 13px; color: rgba(255,255,255,0.65); cursor: pointer; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+    .sidebar-item.active { background: rgba(217,0,141,0.18); color: #fff; font-weight: 500; }
+    .sidebar-item .material-icons { font-size: 18px; opacity: 0.85; }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { height: 56px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; padding: 0 24px; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    .topbar-back { width: 32px; height: 32px; border: none; background: none; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #555; }
+    .topbar-title { font-size: 16px; font-weight: 600; color: rgb(217,0,141); flex: 1; }
+    .topbar-user { font-size: 13px; color: #555; display: flex; align-items: center; gap: 6px; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: rgb(217,0,141); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+    .content { flex: 1; overflow-y: auto; }
+
+    /* ── Tabs ── */
+    .tabs-bar { background: #fff; border-bottom: 2px solid #e0e0e0; display: flex; padding: 0 24px; position: sticky; top: 0; z-index: 10; overflow-x: auto; }
+    .tab { padding: 14px 16px; font-size: 13px; font-weight: 500; color: #757575; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap; letter-spacing: 0.3px; }
+    .tab.active { color: rgb(217,0,141); border-bottom-color: rgb(217,0,141); font-weight: 600; }
+
+    /* ── Page body ── */
+    .page-body { padding: 20px 24px; max-width: 960px; }
+
+    /* ── State switcher ── */
+    .switcher { background: #fff8e1; border: 1px solid #f9a825; border-radius: 6px; padding: 10px 14px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .sw-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #5d3f00; letter-spacing: 0.8px; white-space: nowrap; }
+    .sw-div { width: 1px; height: 18px; background: #f9a825; margin: 0 2px; flex-shrink: 0; }
+    .sw-btn { padding: 4px 11px; border-radius: 20px; border: 1px solid #f9a825; background: transparent; font-size: 11px; cursor: pointer; color: #5d3f00; font-family: inherit; font-weight: 500; }
+    .sw-btn:hover, .sw-btn.on { background: #f9a825; color: #fff; font-weight: 600; }
+
+    /* ── Ticket card ── */
+    .ticket-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+    .ticket-id { padding: 12px 20px; font-size: 13px; color: #555; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+    .ticket-id input[type=checkbox] { accent-color: rgb(217,0,141); width: 16px; height: 16px; }
+    .ticket-id span { font-weight: 600; color: #212121; }
+
+    /* ── Section inside card ── */
+    .sec { border-bottom: 1px solid #f0f0f0; }
+    .sec:last-child { border-bottom: none; }
+    .sec-head { display: flex; align-items: center; gap: 8px; padding: 12px 20px 10px; }
+    .sec-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .sec-icon.pink { background: rgba(217,0,141,0.1); color: rgb(217,0,141); }
+    .sec-icon.blue { background: #e3f2fd; color: #1565c0; }
+    .sec-icon.green { background: #e8f5e9; color: #2e7d32; }
+    .sec-icon.grey { background: #f5f5f5; color: #757575; }
+    .sec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #555; }
+    .sec-body { padding: 0 20px 16px; }
+
+    /* ── Field grid ── */
+    .field-row { display: grid; gap: 0; }
+    .field-row.cols4 { grid-template-columns: repeat(4, 1fr); }
+    .field-row.cols3 { grid-template-columns: repeat(3, 1fr); }
+    .field-row.cols2 { grid-template-columns: repeat(2, 1fr); }
+    .field { padding: 8px 0 6px; }
+    .field-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #9e9e9e; margin-bottom: 5px; }
+    .field-value { font-size: 14px; font-weight: 500; color: #212121; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .field-value.pink { color: rgb(217,0,141); font-weight: 600; font-size: 15px; }
+    .field-value.bold { font-weight: 700; }
+
+    /* ── Chips / badges ── */
+    .badge { display: inline-flex; align-items: center; border-radius: 4px; padding: 2px 9px; font-size: 12px; font-weight: 600; }
+    .badge.red { background: #ffebee; color: #c62828; }
+    .badge.green { background: #e8f5e9; color: #2e7d32; }
+    .badge.grey { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+    .badge.blue { background: #e3f2fd; color: #1565c0; }
+    .badge.orange { background: #fff8e1; color: #e65100; }
+
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 4px; border: 1px solid; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; letter-spacing: 0.2px; }
+    .btn-outline { border-color: #bdbdbd; color: #424242; background: #fff; }
+    .btn-outline:hover { border-color: #9e9e9e; background: #fafafa; }
+    .btn-pink { border-color: rgb(217,0,141); color: rgb(217,0,141); background: #fff; }
+    .btn-pink:hover { background: rgba(217,0,141,0.05); }
+    .btn-pink-fill { border-color: rgb(217,0,141); background: rgb(217,0,141); color: #fff; }
+    .btn-pink-fill:hover { background: rgb(190,0,120); }
+    .btn-wa { border-color: #43a047; color: #2e7d32; background: #fff; }
+    .btn-wa:hover { background: #f1f8e9; }
+    .btn-disabled { border-color: #e0e0e0; color: #bdbdbd; background: #fafafa; cursor: not-allowed; }
+    .btn .material-icons { font-size: 15px; }
+
+    /* ── Upload zone ── */
+    .upload-zone { border: 2px dashed #e0e0e0; border-radius: 6px; padding: 20px; text-align: center; color: #9e9e9e; background: #fafafa; cursor: pointer; transition: all 0.15s; }
+    .upload-zone:hover { border-color: rgb(217,0,141); color: rgb(217,0,141); background: rgba(217,0,141,0.02); }
+    .upload-zone .material-icons { font-size: 28px; margin-bottom: 6px; display: block; }
+    .upload-zone p { font-size: 12px; margin-top: 4px; }
+
+    /* ── Proof file display ── */
+    .proof-file { display: flex; align-items: center; gap: 12px; background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px 14px; }
+    .proof-icon { width: 36px; height: 36px; border-radius: 4px; background: #ffebee; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .proof-icon .material-icons { font-size: 20px; color: #c62828; }
+    .proof-name { font-size: 13px; font-weight: 600; color: #212121; }
+    .proof-meta { font-size: 11px; color: #757575; margin-top: 2px; }
+
+    /* ── Info / status banners ── */
+    .info-bar { display: flex; align-items: flex-start; gap: 10px; border-radius: 6px; padding: 12px 14px; font-size: 13px; margin-top: 12px; }
+    .info-bar.blue { background: #e3f2fd; border: 1px solid #90caf9; color: #1565c0; }
+    .info-bar.green { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
+    .info-bar.orange { background: #fff8e1; border: 1px solid #ffe082; color: #e65100; }
+    .info-bar .material-icons { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .info-bar strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
+    /* ── Waive fee link ── */
+    .waive { font-size: 11px; color: rgb(217,0,141); cursor: pointer; text-decoration: underline; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid #f0f0f0; margin: 4px 0 12px; }
+  </style>
+</head>
+<body>
+<div class="hub">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">∞ Wiom</div>
+    <div class="sidebar-section">Dashboard</div>
+    <div class="sidebar-item"><span class="material-icons">dashboard</span> Dashboard</div>
+    <div class="sidebar-section">Inventory</div>
+    <div class="sidebar-item"><span class="material-icons">book</span> Inventory Ledger</div>
+    <div class="sidebar-item"><span class="material-icons">assignment</span> Order Request</div>
+    <div class="sidebar-item"><span class="material-icons">local_shipping</span> Pickup Tickets</div>
+    <div class="sidebar-item"><span class="material-icons">people</span> Partner Allocation</div>
+    <div class="sidebar-section">User Search</div>
+    <div class="sidebar-item"><span class="material-icons">business</span> Partners</div>
+    <div class="sidebar-item active"><span class="material-icons">person</span> Customer</div>
+    <div class="sidebar-item"><span class="material-icons">archive</span> Archived Customer</div>
+    <div class="sidebar-item"><span class="material-icons">search</span> Booking Detail Search</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <button class="topbar-back"><span class="material-icons" style="font-size:20px;">arrow_back</span></button>
+      <div class="topbar-title">Customer Details</div>
+      <div class="topbar-user"><div class="avatar">J</div> Jaivin Prajapati</div>
+    </div>
+
+    <div class="content">
+
+      <!-- Tab bar -->
+      <div class="tabs-bar">
+        <div class="tab">CUSTOMER INFO</div>
+        <div class="tab">NETWORK DIAGNOSTICS</div>
+        <div class="tab">PLAN &amp; BILLING</div>
+        <div class="tab active">NET BOX RETURN REQUESTS</div>
+        <div class="tab">COUPONS &amp; EXTENSIONS</div>
+      </div>
+
+      <div class="page-body">
+
+        <!-- ── State Switcher (design tool only) ── -->
+        <div class="switcher">
+          <span class="sw-label">Customer</span>
+          <button class="sw-btn on" id="btn-active" onclick="setState('active')">Active</button>
+          <button class="sw-btn" id="btn-archived" onclick="setState('archived')">Archived</button>
+          <div class="sw-div"></div>
+          <span class="sw-label">3PL Proof</span>
+          <button class="sw-btn on" id="btn-noproof" onclick="setProof(false)">Not uploaded</button>
+          <button class="sw-btn" id="btn-proof" onclick="setProof(true)">Uploaded</button>
+          <div class="sw-div"></div>
+          <span class="sw-label">UPI</span>
+          <button class="sw-btn on" id="btn-noupi" onclick="setUPI(false)">No UPI</button>
+          <button class="sw-btn" id="btn-upi" onclick="setUPI(true)">Has UPI</button>
+          <div class="sw-div"></div>
+          <span class="sw-label">Refund</span>
+          <button class="sw-btn on" id="btn-notstarted" onclick="setRefund('not_started')">Not started</button>
+          <button class="sw-btn" id="btn-initiated" onclick="setRefund('initiated')">Initiated</button>
+          <button class="sw-btn" id="btn-done" onclick="setRefund('done')">Done</button>
+        </div>
+
+        <!-- ── Page heading ── -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="font-size:16px; font-weight:600; color:#212121;">Active Net-box Return Requests</div>
+          <div class="badge blue">1 Active</div>
+        </div>
+
+        <!-- ── Ticket Card ── -->
+        <div class="ticket-card">
+
+          <!-- Ticket ID row -->
+          <div class="ticket-id">
+            <input type="checkbox">
+            Ticket ID: <span>1774607948482397</span>
+          </div>
+
+          <!-- ══════════════════════════════════════
+               A. NET-BOX REFUND DETAILS
+          ══════════════════════════════════════ -->
+          <div class="sec">
+            <div class="sec-head">
+              <div class="sec-icon pink"><span class="material-icons" style="font-size:14px;">loop</span></div>
+              <div class="sec-title">A. Net-box Refund Details</div>
+            </div>
+            <div class="sec-body">
+              <div class="field-row cols4">
+                <div class="field">
+                  <div class="field-label">Eligible Refund Amount</div>
+                  <div class="field-value">₹300.00</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Net-box Pickup Charges</div>
+                  <div class="field-value">₹50.00</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Late Fee Charges</div>
+                  <div class="field-value">₹0.00 <span class="waive">+ Waive Fee</span></div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Total Refund (Expected)</div>
+                  <div class="field-value pink">₹250.00</div>
+                </div>
+              </div>
+              <hr>
+              <div class="field-row cols2">
+                <div class="field">
+                  <div class="field-label">UPI Added?</div>
+                  <div class="field-value" id="upi-field">
+                    <!-- rendered by JS -->
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Refund Status</div>
+                  <div class="field-value" id="refund-status-field">
+                    <!-- rendered by JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- UPI-collection info bar (shown when proof uploaded + no UPI) -->
+              <div id="upi-wait-bar" style="display:none;"></div>
+
+              <!-- Refund initiated info bar -->
+              <div id="refund-info-bar" style="display:none;"></div>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════
+               B. TICKET & COLLECTION STATUS
+          ══════════════════════════════════════ -->
+          <div class="sec">
+            <div class="sec-head">
+              <div class="sec-icon blue"><span class="material-icons" style="font-size:14px;">confirmation_number</span></div>
+              <div class="sec-title">B. Ticket &amp; Collection Status</div>
+            </div>
+            <div class="sec-body">
+              <div class="field-row cols4">
+                <div class="field">
+                  <div class="field-label">Ticket Status</div>
+                  <div class="field-value bold">RESOLVED</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Ticket Created At</div>
+                  <div class="field-value">27 Mar 2026, 10:05 am</div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Partner Collected Net-Box</div>
+                  <div class="field-value"><span class="badge grey">No</span></div>
+                </div>
+                <div class="field">
+                  <div class="field-label">Partner Collection Date</div>
+                  <div class="field-value" style="color:#9e9e9e; font-size:13px;">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════
+               C. 3PL CONFIRMATION  (new section)
+          ══════════════════════════════════════ -->
+          <div class="sec">
+            <div class="sec-head">
+              <div class="sec-icon green"><span class="material-icons" style="font-size:14px;">local_shipping</span></div>
+              <div class="sec-title">C. 3PL Confirmation</div>
+            </div>
+            <div class="sec-body">
+
+              <!-- State: no proof uploaded -->
+              <div id="proof-empty">
+                <div class="upload-zone" onclick="setProof(true); document.getElementById('btn-proof').classList.add('on'); document.getElementById('btn-noproof').classList.remove('on');">
+                  <span class="material-icons">upload_file</span>
+                  <strong style="font-size:13px; color:#424242;">Upload 3PL Pickup Proof</strong>
+                  <p>PDF, JPG or PNG · max 10 MB</p>
+                </div>
+              </div>
+
+              <!-- State: proof uploaded -->
+              <div id="proof-uploaded" style="display:none;">
+                <div class="proof-file">
+                  <div class="proof-icon"><span class="material-icons">picture_as_pdf</span></div>
+                  <div style="flex:1; min-width:0;">
+                    <div class="proof-name">3pl_pickup_WR2948301.pdf</div>
+                    <div class="proof-meta">Uploaded by Anurag Sharma (OPS-012) · 9 Apr 2026, 11:32 am</div>
+                  </div>
+                  <button class="btn btn-outline" style="font-size:11px; padding:4px 10px;"><span class="material-icons">open_in_new</span> View</button>
+                </div>
+
+                <div class="field-row cols3" style="margin-top:14px;">
+                  <div class="field">
+                    <div class="field-label">Proof File</div>
+                    <div class="field-value" style="font-size:13px;">3pl_pickup_WR2948301.pdf</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Uploaded By</div>
+                    <div class="field-value" style="font-size:13px;">Anurag Sharma (OPS-012)</div>
+                  </div>
+                  <div class="field">
+                    <div class="field-label">Uploaded At</div>
+                    <div class="field-value" style="font-size:13px;">9 Apr 2026, 11:32 am</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div><!-- /ticket-card -->
+
+      </div><!-- /page-body -->
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /hub -->
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let state = { archived: false, proof: false, upi: false, refund: 'not_started' };
+
+  function setState(v) {
+    state.archived = (v === 'archived');
+    ['btn-active','btn-archived'].forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById(v === 'archived' ? 'btn-archived' : 'btn-active').classList.add('on');
+    render();
+  }
+  function setProof(v) {
+    state.proof = v;
+    ['btn-proof','btn-noproof'].forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById(v ? 'btn-proof' : 'btn-noproof').classList.add('on');
+    render();
+  }
+  function setUPI(v) {
+    state.upi = v;
+    ['btn-upi','btn-noupi'].forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById(v ? 'btn-upi' : 'btn-noupi').classList.add('on');
+    render();
+  }
+  function setRefund(v) {
+    state.refund = v;
+    ['btn-notstarted','btn-initiated','btn-done'].forEach(id => document.getElementById(id).classList.remove('on'));
+    document.getElementById('btn-' + v.replace('_','')).classList.add('on');
+    render();
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function render() {
+    const { archived, proof, upi, refund } = state;
+
+    // 3PL proof section
+    document.getElementById('proof-empty').style.display    = proof ? 'none' : 'block';
+    document.getElementById('proof-uploaded').style.display = proof ? 'block' : 'none';
+
+    // UPI field
+    const upiField = document.getElementById('upi-field');
+    if (upi) {
+      upiField.innerHTML = `<span class="badge green">Yes</span> <span style="font-size:13px; color:#555;">9876543210@ybl</span>`;
+    } else {
+      const reminderBtn = archived
+        ? '' // no in-app reminder for archived
+        : `<button class="btn btn-outline" style="font-size:11px; padding:4px 10px;" onclick="void(0)"><span class="material-icons">notifications</span>Send UPI Reminder</button>`;
+      const waBtn = (archived && proof)
+        ? `<button class="btn btn-wa" style="font-size:11px; padding:4px 10px;" onclick="void(0)"><span class="material-icons">whatsapp</span>Send WhatsApp Link</button>`
+        : '';
+      upiField.innerHTML = `<span class="badge red">No</span> ${reminderBtn} ${waBtn}`;
+    }
+
+    // Refund status field
+    const rsField = document.getElementById('refund-status-field');
+    if (refund === 'not_started') {
+      rsField.innerHTML = `<span class="badge grey">Not started</span>`;
+    } else if (refund === 'initiated') {
+      rsField.innerHTML = `<span class="badge orange">Processing</span>`;
+    } else {
+      rsField.innerHTML = `<span class="badge green">Completed</span> <span style="font-size:12px; color:#555;">9 Apr 2026, 12:04 pm</span>`;
+    }
+
+    // UPI wait bar
+    const waitBar = document.getElementById('upi-wait-bar');
+    if (proof && !upi && refund === 'not_started') {
+      if (archived) {
+        waitBar.style.display = 'block';
+        waitBar.innerHTML = `
+          <div class="info-bar orange">
+            <span class="material-icons">schedule</span>
+            <div>
+              <strong>Waiting for customer to submit UPI</strong>
+              WhatsApp link sent · 9 Apr 2026, 11:35 am · Refund will auto-initiate once customer submits UPI via the link.
+            </div>
+          </div>`;
+      } else {
+        waitBar.style.display = 'block';
+        waitBar.innerHTML = `
+          <div class="info-bar blue">
+            <span class="material-icons">schedule</span>
+            <div>
+              <strong>Waiting for customer to submit UPI</strong>
+              In-app reminder sent · Refund will auto-initiate once customer submits UPI.
+            </div>
+          </div>`;
+      }
+    } else {
+      waitBar.style.display = 'none';
+      waitBar.innerHTML = '';
+    }
+
+    // Refund info bar
+    const refundBar = document.getElementById('refund-info-bar');
+    if (refund === 'initiated') {
+      refundBar.style.display = 'block';
+      refundBar.innerHTML = `
+        <div class="info-bar orange" style="margin-top:12px;">
+          <span class="material-icons">autorenew</span>
+          <div>
+            <strong>Refund auto-initiated</strong>
+            Triggered at 9 Apr 2026, 12:01 pm · Juspay processing · UPI: 9876543210@ybl · Amount: ₹250.00
+          </div>
+        </div>`;
+    } else if (refund === 'done') {
+      refundBar.style.display = 'block';
+      refundBar.innerHTML = `
+        <div class="info-bar green" style="margin-top:12px;">
+          <span class="material-icons">check_circle</span>
+          <div>
+            <strong>Refund completed</strong>
+            ₹250.00 transferred to 9876543210@ybl · Txn ID: TXN-JP-8823991 · 9 Apr 2026, 12:04 pm
+          </div>
+        </div>`;
+    } else {
+      refundBar.style.display = 'none';
+      refundBar.innerHTML = '';
+    }
+  }
+
+  // Initial render
+  render();
+</script>
+</body>
+</html>
