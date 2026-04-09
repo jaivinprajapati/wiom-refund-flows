@@ -135,8 +135,8 @@
       <div class="flow-step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <div class="step-title">Opens Netbox Return Requests tab → uploads 3PL pickup proof</div>
-          <div class="step-sub">Section C shows upload zone. Anurag uploads PDF/image. Sets <code>tpl_proof_uploaded = true</code> in customer DB. Stores file with uploader name and timestamp.</div>
+          <div class="step-title">Opens Netbox Return Requests tab → sanity check → uploads 3PL pickup proof</div>
+          <div class="step-sub">Section C upload CTA is <strong>disabled if no active PUT exists</strong> for this customer. By design, a case only reaches 3PL when a partner has failed to act on a ticket — so a PUT must already exist. This acts as a built-in sanity check. If PUT exists: Anurag uploads PDF/image. Sets <code>tpl_proof_uploaded = true</code> in <code>security_deposit_order</code> table. Stores proof file URL, uploader name, and timestamp against the order.</div>
         </div>
       </div>
       <div class="flow-step">
@@ -175,7 +175,7 @@
       <tr><th>Area</th><th>Change</th></tr>
       <tr>
         <td><strong>New: Section C</strong></td>
-        <td>3PL Confirmation — upload zone (empty state) / proof file display with uploader + timestamp (uploaded state)</td>
+        <td>3PL Confirmation — upload zone (empty state) / proof file display with uploader + timestamp (uploaded state). <strong>Upload CTA disabled if no active PUT exists for this customer</strong> — sanity check to ensure 3PL is only triggered on valid cases.</td>
       </tr>
       <tr>
         <td><strong>Section A — UPI row</strong></td>
@@ -195,12 +195,11 @@
     <table>
       <tr><th>Area</th><th>Change</th></tr>
       <tr>
-        <td><strong>New DB flag</strong></td>
-        <td><code>tpl_proof_uploaded</code> on <code>security_deposit_order</code> (or equivalent) — with uploader, filename, timestamp. Audit trail.</td>
-      </tr>
-      <tr>
-        <td><strong>File storage</strong></td>
-        <td>Proof file stored (S3 or existing storage) and linked to order.</td>
+        <td><strong>New DB flag + file storage</strong></td>
+        <td>
+          <code>tpl_proof_uploaded</code>, <code>tpl_uploaded_by</code>, <code>tpl_uploaded_at</code>, <code>tpl_proof_file_url</code> — all stored on <code>security_deposit_order</code> table directly.<br><br>
+          <strong>Why security_deposit_order specifically:</strong> Moving forward, refunds may be triggered by other operator-uploaded signals (not just 3PL). Storing all proof against the order table keeps a clean, extensible audit trail — one record per order, all signals in one place.
+        </td>
       </tr>
       <tr>
         <td><strong>Refund trigger</strong></td>
@@ -230,10 +229,8 @@
     <div class="section-title">Open Items</div>
     <table>
       <tr><th>Item</th><th>Owner</th><th>Status</th></tr>
-      <tr><td>Captive portal — existing or new build?</td><td>Rajnikant</td><td><span class="badge grey">Open</span></td></tr>
       <tr><td>OTP channel for captive portal (SMS vs WA)</td><td>Akash</td><td><span class="badge grey">Open</span></td></tr>
-      <tr><td>Exact DB table / column name for tpl flag</td><td>Customer BE</td><td><span class="badge grey">Open</span></td></tr>
-      <tr><td>Notification to Anurag when UPI received (nudge path)</td><td>Jaivin</td><td><span class="badge grey">Open</span></td></tr>
+      <tr><td>Exact column naming for tpl fields on security_deposit_order</td><td>Customer BE</td><td><span class="badge grey">Open</span></td></tr>
     </table>
   </div>
 
